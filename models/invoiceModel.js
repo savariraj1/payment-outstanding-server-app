@@ -78,7 +78,6 @@ async function findAll(filters = {}) {
     sql += `
         ORDER BY
             i.import_id DESC,
-            h.imported_at DESC,
             i.due_date ASC
         `;
 
