@@ -1,6 +1,6 @@
-const db = require("../config/db");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const userModel = require("../models/userModel");
 
 exports.login = async (req, res) => {
 
@@ -15,15 +15,12 @@ exports.login = async (req, res) => {
         // console.log("================================");
 
         // Find active user
-        const [rows] = await db.execute(
-            "SELECT * FROM users WHERE email = ? AND status = 'Active'",
-            [email]
-        );
+        const user = await userModel.findActiveByEmail(email);
 
-        console.log("Users Found:", rows.length);
+        console.log("Users Found:", user ? 1 : 0);
 
         // User not found
-        if (rows.length === 0) {
+        if (!user) {
 
             console.log("❌ User not found or inactive");
 
@@ -33,9 +30,6 @@ exports.login = async (req, res) => {
             });
 
         }
-
-        const user = rows[0];
-
         console.log("================================");
         console.log("DATABASE USER");
         console.log("ID:", user.id);
