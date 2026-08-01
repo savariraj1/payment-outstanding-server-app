@@ -27,7 +27,7 @@ exports.getOutstanding = async (req, res) => {
 
                 importId: inv.import_id,
 
-                importDate: inv.imported_at,
+                importDate: inv.import_date,
 
                 importFile: inv.file_name,
 

@@ -33,12 +33,12 @@ function buildInvoiceFilters({
     });
 
     if (start) {
-        where.push("DATE(h.imported_at) >= ?");
+        where.push("DATE(h.created_at) >= ?");
         values.push(start);
     }
 
     if (end) {
-        where.push("DATE(h.imported_at) <= ?");
+        where.push("DATE(h.created_at) <= ?");
         values.push(end);
     }
 
@@ -65,7 +65,7 @@ async function findAll(filters = {}) {
         SELECT
             i.*,
             h.file_name,
-            h.imported_at AS import_date
+            h.created_at AS import_date
         FROM invoices i
         LEFT JOIN import_history h
             ON i.import_id = h.id
@@ -78,6 +78,7 @@ async function findAll(filters = {}) {
     sql += `
         ORDER BY
             i.import_id DESC,
+            h.created_at DESC,
             i.due_date ASC
         `;
 
