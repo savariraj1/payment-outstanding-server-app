@@ -1,4 +1,5 @@
 const db = require("./db");
+const seedDefaultUser = require("../seeders/defaultUserSeeder");
 
 async function createUsersTable() {
     await db.query(`
@@ -89,6 +90,7 @@ async function initDb() {
     await createImportHistoryTable();
     await createInvoicesTable();
     await createEmailHistoryTable();
+    await seedDefaultUser();
 
     console.log("[DB] Tables ensured");
 }
