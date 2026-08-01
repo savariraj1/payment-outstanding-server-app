@@ -8,11 +8,11 @@ exports.login = async (req, res) => {
 
         const { email, password } = req.body;
 
-        console.log("================================");
-        console.log("LOGIN REQUEST");
-        console.log("Email:", email);
-        console.log("Password:", password);
-        console.log("================================");
+        // console.log("================================");
+        // console.log("LOGIN REQUEST");
+        // console.log("Email:", email);
+        // console.log("Password:", password);
+        // console.log("================================");
 
         // Find active user
         const [rows] = await db.execute(
