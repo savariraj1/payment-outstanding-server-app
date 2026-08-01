@@ -9,7 +9,7 @@ async function generateExcel(invoices, res) {
 
     sheet.columns = [
         { header: "Invoice No", key: "invoiceNo", width: 18 },
-        { header: "Customer", key: "customer", width: 30 },
+        { header: "Company", key: "company", width: 30 },
         { header: "Invoice Date", key: "invoiceDate", width: 18 },
         { header: "Due Date", key: "dueDate", width: 18 },
         { header: "Invoice Amount", key: "amount", width: 18 },
@@ -65,7 +65,7 @@ async function generateExcel(invoices, res) {
 
         sheet.addRow({
             invoiceNo: inv.invoiceNo,
-            customer: inv.customer,
+            company: inv.company,
             invoiceDate: inv.invoiceDate,
             dueDate: inv.dueDate,
             amount: invoiceAmount,

@@ -92,6 +92,9 @@ exports.importExcel = async (req, res) => {
             const creditAmount =
                 Number(row["Credit Note Amount"] || 0);
 
+            const creditNoteNumber =
+                String(row["Credit Note Number"] || "").trim();
+
             const outstanding =
                 Math.max(
                     invoiceAmount
@@ -106,7 +109,12 @@ exports.importExcel = async (req, res) => {
 
             let paymentStatus = "Unpaid";
 
-            if (outstanding === 0) {
+            if (creditAmount > 0 && receivedAmount === 0) {
+
+                paymentStatus = "Credit Note";
+
+            }
+            else if (outstanding === 0) {
 
                 paymentStatus = "Paid";
 
@@ -150,6 +158,10 @@ exports.importExcel = async (req, res) => {
                     row["Received Date"]
                 ),
                 creditNoteAmount: creditAmount,
+                creditNoteNumber,
+                creditNoteDate: excelService.parseDate(
+                    row["Credit Note Date"]
+                ),
                 creditNoteDate: excelService.parseDate(
                     row["Credit Note Date"]
                 ),

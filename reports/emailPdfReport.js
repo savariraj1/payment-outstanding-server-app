@@ -181,7 +181,7 @@ async function generatePDF(invoices) {
 
             { title: "Invoice No", width: 50 },
 
-            { title: "Customer", width: 130 },
+            { title: "Company", width: 130 },
 
             { title: "Invoice Date", width: 55 },
 
@@ -267,7 +267,7 @@ async function generatePDF(invoices) {
             const row = [
 
                 inv.invoiceNo,
-                inv.customer,
+                inv.company,
                 formatDate(inv.invoiceDate),
                 formatDate(inv.dueDate),
                 formatAmount(amount),

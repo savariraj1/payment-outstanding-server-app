@@ -25,31 +25,45 @@ exports.getOutstanding = async (req, res) => {
 
                 id: inv.id,
 
+                importId: inv.import_id,
+
+                importDate: inv.imported_at,
+
+                importFile: inv.file_name,
+
                 invoiceNo: inv.invoice_number,
 
                 customer: inv.customer_name,
 
                 company: inv.company_name,
 
+                invoiceDate: inv.invoice_date,
+
                 dueDate: inv.due_date,
-
-                ageingBucket: ageing.bucket,
-
-                ageingDays: ageing.days,
 
                 invoiceAmount: Number(inv.invoice_amount),
 
                 received: Number(inv.received_amount),
 
+                receivedDate: inv.received_date,
+
                 creditNote: Number(inv.credit_note_amount),
+
+                creditNoteNumber: inv.credit_note_number,
+
+                creditNoteDate: inv.credit_note_date,
 
                 outstanding: Number(inv.outstanding_amount),
 
-                status: inv.payment_status,
+                paymentStatus: inv.payment_status,
 
                 remarks: inv.remarks,
 
-                email: inv.Email
+                email: inv.email,
+
+                ageingBucket: ageing.bucket,
+
+                ageingDays: ageing.days
 
             };
 

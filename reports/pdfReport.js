@@ -281,9 +281,9 @@ function generatePDF(invoices, res) {
 
 const columns = [
 
-    { title: "Invoice No", key: "invoiceNo", width: 50 },
+    { title: "Invoice No", key: "invoiceNo", width: 70 },
 
-    { title: "Customer", key: "customer", width: 130 },
+    { title: "Company", key: "company", width: 100 },
 
     { title: "Invoice Date", key: "invoiceDate", width: 55 },
 
@@ -425,7 +425,7 @@ invoices.forEach((inv, index) => {
 
         inv.invoiceNo,
 
-        inv.customer,
+        inv.company,
 
         formatDate(inv.invoiceDate),
 

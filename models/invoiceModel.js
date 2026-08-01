@@ -33,12 +33,12 @@ function buildInvoiceFilters({
     });
 
     if (start) {
-        where.push("DATE(due_date) >= ?");
+        where.push("DATE(h.imported_at) >= ?");
         values.push(start);
     }
 
     if (end) {
-        where.push("DATE(due_date) <= ?");
+        where.push("DATE(h.imported_at) <= ?");
         values.push(end);
     }
 
@@ -61,18 +61,30 @@ async function findAll(filters = {}) {
         values
     } = buildInvoiceFilters(filters);
 
-    let sql = "SELECT * FROM invoices";
+    let sql = `
+        SELECT
+            i.*,
+            h.file_name,
+            h.imported_at AS import_date
+        FROM invoices i
+        LEFT JOIN import_history h
+            ON i.import_id = h.id
+    `;
 
     if (where.length) {
         sql += " WHERE " + where.join(" AND ");
     }
 
-    sql += " ORDER BY due_date ASC";
+    sql += `
+        ORDER BY
+            i.import_id DESC,
+            h.imported_at DESC,
+            i.due_date ASC
+        `;
 
     const [rows] = await db.query(sql, values);
 
     return rows;
-
 }
 
 async function findOutstandingByCompany(company) {
@@ -139,6 +151,7 @@ async function create(invoice) {
             received_amount,
             received_date,
             credit_note_amount,
+            credit_note_number,
             credit_note_date,
             remarks,
             paid_amount,
@@ -183,6 +196,7 @@ async function create(invoice) {
             invoice.receivedAmount,
             invoice.receivedDate,
             invoice.creditNoteAmount,
+            invoice.creditNoteNumber,
             invoice.creditNoteDate,
             invoice.remarks,
             invoice.paidAmount,
@@ -198,11 +212,63 @@ async function create(invoice) {
 
 }
 
+async function findById(id) {
+
+    const [rows] = await db.query(
+        `
+        SELECT *
+        FROM invoices
+        WHERE id = ?
+        LIMIT 1
+        `,
+        [id]
+    );
+
+    return rows[0] || null;
+
+}
+
+async function update(id, invoice) {
+
+    const [result] = await db.query(
+        `
+        UPDATE invoices
+        SET
+            payment_status = ?,
+            received_amount = ?,
+            received_date = ?,
+            credit_note_amount = ?,
+            credit_note_number = ?,
+            credit_note_date = ?,
+            remarks = ?,
+            outstanding_amount = ?,
+            updated_at = NOW()
+        WHERE id = ?
+        `,
+        [
+            invoice.paymentStatus,
+            invoice.receivedAmount,
+            invoice.receivedDate,
+            invoice.creditNoteAmount,
+            invoice.creditNoteNumber,
+            invoice.creditNoteDate,
+            invoice.remarks,
+            invoice.outstandingAmount,
+            id
+        ]
+    );
+
+    return result;
+
+}
+
 module.exports = {
     buildInvoiceFilters,
     findAll,
     findOutstandingByCompany,
     findOutstandingCompanies,
     findByInvoiceNumber,
-    create
+    findById,
+    create,
+    update
 };

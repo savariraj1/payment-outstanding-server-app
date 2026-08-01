@@ -5,29 +5,65 @@ const {
 } = require("../services/reminderService");
 
 const {
-sendDailyReport
-}=require("../services/dailyReportService");
+    sendDailyReport
+} = require("../services/dailyReportService");
+
+// ===============================
+// Helper Functions
+// ===============================
+
+function isMonthlyReminderDay(date = new Date()) {
+
+    const dayOfMonth = date.getDate();
+    const dayOfWeek = date.getDay(); // Sunday = 0
+
+    return (
+        (dayOfMonth === 1 && dayOfWeek !== 0) ||
+        (dayOfMonth === 2 && dayOfWeek === 1)
+    );
+}
+
+function isWeeklyReminderDay(date = new Date()) {
+
+    // Monday
+    return date.getDay() === 1;
+}
 
 // =====================================
 // DAILY
-// Runs every day at 9:00 AM
+// Monday - Saturday 9 AM
 // =====================================
 
-cron.schedule("0 9 * * *", async () => {
+cron.schedule("0 9 * * 1-6", async () => {
 
     console.log("=================================");
     console.log("Running Daily Scheduler");
     console.log("=================================");
 
-    await sendAutomaticReminders();
-
+    // Daily Report should ALWAYS go (except Sunday)
     await sendDailyReport();
+
+    // Skip reminder if today is Monthly day
+    if (isMonthlyReminderDay()) {
+
+        console.log("Daily Reminder Skipped (Monthly Reminder Day)");
+        return;
+    }
+
+    // Skip reminder if today is Weekly day
+    if (isWeeklyReminderDay()) {
+
+        console.log("Daily Reminder Skipped (Weekly Reminder Day)");
+        return;
+    }
+
+    await sendAutomaticReminders();
 
 });
 
 // =====================================
 // WEEKLY
-// Every Monday at 10:00 AM
+// Every Monday 10 AM
 // =====================================
 
 cron.schedule("0 10 * * 1", async () => {
@@ -36,16 +72,29 @@ cron.schedule("0 10 * * 1", async () => {
     console.log("Running Weekly Scheduler");
     console.log("=================================");
 
+    // Skip if Monthly reminder should run
+    if (isMonthlyReminderDay()) {
+
+        console.log("Weekly Reminder Skipped (Monthly Reminder Day)");
+        return;
+    }
+
     await sendAutomaticReminders();
 
 });
 
 // =====================================
 // MONTHLY
-// First day of every month at 11:00 AM
+// 1st OR 2nd (if 1st is Sunday)
 // =====================================
 
-cron.schedule("0 11 1 * *", async () => {
+cron.schedule("0 11 1-2 * *", async () => {
+
+    if (!isMonthlyReminderDay()) {
+
+        console.log("Monthly Scheduler Skipped");
+        return;
+    }
 
     console.log("=================================");
     console.log("Running Monthly Scheduler");
@@ -59,5 +108,5 @@ console.log("=================================");
 console.log("Scheduler Started Successfully");
 console.log("Daily   : 09:00 AM");
 console.log("Weekly  : Monday 10:00 AM");
-console.log("Monthly : 1st Day 11:00 AM");
+console.log("Monthly : 1st (or 2nd if 1st is Sunday)");
 console.log("=================================");
