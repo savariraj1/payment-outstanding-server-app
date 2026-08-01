@@ -132,6 +132,11 @@ const exportRoutes = require("./routes/exportRoutes");
 const authRoutes = require("./routes/authRoutes");
 const importRoutes = require("./routes/importRoutes");
 
+const allowedOrigins = [
+    "https://payment-outstanding-client-app.vercel.app",
+    "http://localhost:3000",
+    "http://localhost:5173"
+];
 
 
 const app = express();
@@ -143,7 +148,16 @@ app.use((req, res, next) => {
 // ======================
 // Middleware
 // ======================
-app.use(cors());
+app.use(cors({
+    origin(origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+
+        return callback(new Error("CORS origin not allowed"));
+    },
+    credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
