@@ -1,16 +1,12 @@
-const db = require("../config/db");
 const calculateAgeing = require("../services/ageing");
+const importHistoryModel = require("../models/importHistoryModel");
+const invoiceModel = require("../models/invoiceModel");
 
 async function getDashboard(req, res) {
 
     try {
 
-        const [imports] = await db.query(`
-        SELECT id
-        FROM import_history
-        ORDER BY id DESC
-        LIMIT 2
-        `);
+        const imports = await importHistoryModel.findLatest(2);
 
         const latestImport =
             imports.length > 0
@@ -40,70 +36,11 @@ async function getDashboard(req, res) {
         const previousDateString =
             previousDate.toISOString().split("T")[0];
 
-        let where = [];
-
-        let values = [];
-
-        const filterArray = Array.isArray(filters)
-            ? filters
-            : filters
-            ? [filters]
-            : [];
-
-        filterArray.forEach(filter=>{
-
-            where.push(`(
-
-                invoice_number LIKE ?
-
-                OR customer_name LIKE ?
-
-                OR company_name LIKE ?
-
-                OR payment_status LIKE ?
-
-                OR remarks LIKE ?
-
-            )`);
-
-            for(let i=0;i<5;i++)
-                values.push(`%${filter}%`);
-
+        const invoices = await invoiceModel.findAll({
+            filters,
+            start,
+            end
         });
-
-        if(start){
-
-            where.push(`DATE(due_date)>=?`);
-
-            values.push(start);
-
-        }
-
-        if(end){
-
-            where.push(`DATE(due_date)<=?`);
-
-            values.push(end);
-
-        }
-
-        let sql=`
-
-        SELECT *
-
-        FROM invoices
-
-        `;
-
-        if(where.length){
-
-            sql+=" WHERE "+where.join(" AND ");
-
-        }
-
-        sql+=" ORDER BY due_date ASC";
-
-        const [invoices]=await db.query(sql,values);
 
         const previousSummary = {
             totalOutstanding:0,

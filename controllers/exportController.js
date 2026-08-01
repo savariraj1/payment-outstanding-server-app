@@ -1,5 +1,5 @@
-const db = require("../config/db");
 const generatePDF = require("../reports/pdfReport");
+const invoiceModel = require("../models/invoiceModel");
 
 exports.exportCompanyPDF = async (req, res) => {
 
@@ -7,29 +7,11 @@ exports.exportCompanyPDF = async (req, res) => {
 
         const company = req.query.company;
 
-        let sql = `
-        SELECT *
-        FROM invoices
-        WHERE company_name = ?
-        `;
-
-        let values = [company];
-
-        if(req.query.start){
-
-            sql += " AND DATE(due_date)>=?";
-            values.push(req.query.start);
-
-        }
-
-        if(req.query.end){
-
-            sql += " AND DATE(due_date)<=?";
-            values.push(req.query.end);
-
-        }
-
-        const [rows] = await db.query(sql, values);
+        const rows = await invoiceModel.findAll({
+            company,
+            start: req.query.start,
+            end: req.query.end
+        });
 
         const invoices = rows.map(r => ({
 

@@ -1,13 +1,11 @@
 const transporter = require("./gmail");
 const generatePDF = require("../reports/emailPdfReport");
-const db = require("../config/db");
 const calculateAgeing = require("./ageing");
+const invoiceModel = require("../models/invoiceModel");
 
 async function sendDailyReport() {
 
-    const [rows] = await db.query(
-        "SELECT * FROM invoices ORDER BY due_date ASC"
-    );
+    const rows = await invoiceModel.findAll();
 
     const invoices = rows.map(inv => {
 

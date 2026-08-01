@@ -1,7 +1,8 @@
 const XLSX = require("xlsx");
 const fs = require("fs");
-const db = require("../config/db");
 const excelService = require("../services/excelImportService");
+const importHistoryModel = require("../models/importHistoryModel");
+const invoiceModel = require("../models/invoiceModel");
 
 exports.importExcel = async (req, res) => {
 
@@ -44,25 +45,10 @@ exports.importExcel = async (req, res) => {
         // Create Import Batch
         //-----------------------------------
 
-        const [importResult] = await db.query(
-
-            `INSERT INTO import_history
-            (
-                file_name,
-                total_rows,
-                inserted_rows,
-                duplicate_rows
-            )
-            VALUES
-            (
-                ?,0,0,0
-            )`,
-
-            [
+        const importResult =
+            await importHistoryModel.createImportBatch(
                 req.file.originalname
-            ]
-
-        );
+            );
 
         const importId = importResult.insertId;
 
@@ -82,13 +68,10 @@ exports.importExcel = async (req, res) => {
             // Duplicate Invoice Check
             //-----------------------------------
 
-            const [duplicate] =
-                await db.query(
-                    "SELECT id FROM invoices WHERE invoice_number=?",
-                    [invoiceNo]
-                );
+            const duplicate =
+                await invoiceModel.findByInvoiceNumber(invoiceNo);
 
-            if (duplicate.length > 0) {
+            if (duplicate) {
 
                 duplicateInvoices.push(invoiceNo);
 
@@ -150,103 +133,34 @@ exports.importExcel = async (req, res) => {
             // Save Invoice
             //-----------------------------------
 
-            await db.query(
-
-                `INSERT INTO invoices
-                (
-                    customer_name,
-                    company_name,
-                    email,
-                    invoice_number,
-                    invoice_date,
-                    due_date,
-                    invoice_amount,
-                    received_amount,
-                    received_date,
-                    credit_note_amount,
-                    credit_note_date,
-                    remarks,
-                    paid_amount,
-                    outstanding_amount,
-                    payment_status,
-                    ageing_days,
-                    ageing_bucket,
-                    sync_status,
-                    import_id
-                )
-
-                VALUES
-                (
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    'Synced',
-                    ?
-                )`,
-
-                [
-
-                row["Customer Name"],
-
-                row["Company Name"],
-
-                row["Email"] || "",  
-
-                invoiceNo,
-
-                excelService.parseDate(
+            await invoiceModel.create({
+                customerName: row["Customer Name"],
+                companyName: row["Company Name"],
+                email: row["Email"] || "",
+                invoiceNumber: invoiceNo,
+                invoiceDate: excelService.parseDate(
                     row["Invoice Date"]
                 ),
-
-                excelService.parseDate(
+                dueDate: excelService.parseDate(
                     row["Due Date"]
                 ),
-
                 invoiceAmount,
-
                 receivedAmount,
-
-                excelService.parseDate(
+                receivedDate: excelService.parseDate(
                     row["Received Date"]
                 ),
-
-                creditAmount,
-
-                excelService.parseDate(
+                creditNoteAmount: creditAmount,
+                creditNoteDate: excelService.parseDate(
                     row["Credit Note Date"]
                 ),
-
-                row["Remarks"] || "",
-
-                receivedAmount,
-
-                outstanding,
-
+                remarks: row["Remarks"] || "",
+                paidAmount: receivedAmount,
+                outstandingAmount: outstanding,
                 paymentStatus,
-
-                ageing.days,
-
-                ageing.bucket,
-
+                ageingDays: ageing.days,
+                ageingBucket: ageing.bucket,
                 importId
-
-            ]
-
-            );
+            });
 
             inserted++;
 
@@ -256,24 +170,13 @@ exports.importExcel = async (req, res) => {
         // Save Import History
         //-----------------------------------
 
-        await db.query(
-
-        `UPDATE import_history
-        SET
-
-        total_rows=?,
-        inserted_rows=?,
-        duplicate_rows=?
-
-        WHERE id=?`,
-
-        [
-        rows.length,
-        inserted,
-        duplicateInvoices.length,
-        importId
-        ]
-
+        await importHistoryModel.updateImportBatch(
+            importId,
+            {
+                totalRows: rows.length,
+                insertedRows: inserted,
+                duplicateRows: duplicateInvoices.length
+            }
         );
         fs.unlinkSync(req.file.path);
 

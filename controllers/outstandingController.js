@@ -1,5 +1,5 @@
-const db = require("../config/db");
 const calculateAgeing = require("../services/ageing");
+const invoiceModel = require("../models/invoiceModel");
 
 exports.getOutstanding = async (req, res) => {
 
@@ -11,70 +11,11 @@ exports.getOutstanding = async (req, res) => {
 
         const end = req.query.end;
 
-        let where = [];
-
-        let values = [];
-
-        const filterArray = Array.isArray(filters)
-            ? filters
-            : filters
-            ? [filters]
-            : [];
-
-        filterArray.forEach(filter=>{
-
-            where.push(`(
-
-                invoice_number LIKE ?
-
-                OR customer_name LIKE ?
-
-                OR company_name LIKE ?
-
-                OR payment_status LIKE ?
-
-                OR remarks LIKE ?
-
-            )`);
-
-            for(let i=0;i<5;i++)
-                values.push(`%${filter}%`);
-
+        const rows = await invoiceModel.findAll({
+            filters,
+            start,
+            end
         });
-
-        if(start){
-
-            where.push(`DATE(due_date)>=?`);
-
-            values.push(start);
-
-        }
-
-        if(end){
-
-            where.push(`DATE(due_date)<=?`);
-
-            values.push(end);
-
-        }
-
-        let sql=`
-
-        SELECT *
-
-        FROM invoices
-
-        `;
-
-        if(where.length){
-
-            sql+=" WHERE "+where.join(" AND ");
-
-        }
-
-        sql+=" ORDER BY due_date ASC";
-
-        const [rows]=await db.query(sql,values);
 
         const result = rows.map(inv => {
 
