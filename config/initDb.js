@@ -44,6 +44,7 @@ async function createInvoicesTable() {
             received_amount DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
             received_date DATE DEFAULT NULL,
             credit_note_amount DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
+            credit_note_number VARCHAR(100) DEFAULT NULL,
             credit_note_date DATE DEFAULT NULL,
             remarks TEXT,
             paid_amount DECIMAL(15, 2) NOT NULL DEFAULT 0.00,

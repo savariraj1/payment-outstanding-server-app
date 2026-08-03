@@ -162,9 +162,6 @@ exports.importExcel = async (req, res) => {
                 creditNoteDate: excelService.parseDate(
                     row["Credit Note Date"]
                 ),
-                creditNoteDate: excelService.parseDate(
-                    row["Credit Note Date"]
-                ),
                 remarks: row["Remarks"] || "",
                 paidAmount: receivedAmount,
                 outstandingAmount: outstanding,
