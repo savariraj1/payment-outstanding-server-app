@@ -13,6 +13,29 @@
     //     startScheduler();
 
     // });
+const net = require("net");
+
+const socket = net.createConnection(
+    {
+        host: "smtp.gmail.com",
+        port: 465
+    },
+    () => {
+        console.log("✅ Connected to Gmail SMTP");
+        socket.end();
+    }
+);
+
+socket.setTimeout(10000);
+
+socket.on("timeout", () => {
+    console.log("❌ Connection timed out");
+    socket.destroy();
+});
+
+socket.on("error", (err) => {
+    console.log("❌ Connection error:", err);
+});
 
     
 require("dotenv").config();
