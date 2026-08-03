@@ -11,6 +11,7 @@ const REQUIRED_COLUMNS = [
     "Amount Received",
     "Received Date",
     "Credit Note Amount",
+    "Credit Note Number", 
     "Credit Note Date",
     "Status"
 ];
