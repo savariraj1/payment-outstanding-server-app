@@ -1,43 +1,24 @@
 const dns = require("dns");
 const nodemailer = require("nodemailer");
 
-// Force Node.js to prefer IPv4 over IPv6
 dns.setDefaultResultOrder("ipv4first");
 
-// Check DNS resolution
-dns.lookup("smtp.gmail.com", { all: true }, (err, addresses) => {
-    if (err) {
-        console.log("DNS Lookup Error:", err);
-    } else {
-        console.log("SMTP Addresses:", addresses);
-    }
-});
-
-console.log("EMAIL :", process.env.GMAIL_USER);
-console.log("PASSWORD EXISTS :", !!process.env.GMAIL_APP_PASSWORD);
-
 const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
+    host: "142.250.142.109", // IPv4 address from your DNS lookup
     port: 587,
     secure: false,
-    family: 4,
     auth: {
         user: process.env.GMAIL_USER,
         pass: process.env.GMAIL_APP_PASSWORD
     },
-    connectionTimeout: 30000,
-    greetingTimeout: 30000,
-    socketTimeout: 30000,
-    requireTLS: true
+    tls: {
+        servername: "smtp.gmail.com"
+    },
+    connectionTimeout: 30000
 });
 
-transporter.verify((error, success) => {
-    if (error) {
-        console.log("SMTP Verify Error:");
-        console.log(error);
-    } else {
-        console.log("SMTP Server is ready");
-    }
+transporter.verify((err) => {
+    console.log(err || "SMTP OK");
 });
 
 module.exports = transporter;
