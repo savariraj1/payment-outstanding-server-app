@@ -181,6 +181,7 @@ async function create(invoice) {
             ?,
             ?,
             ?,
+            ?,
             'Synced',
             ?
         )

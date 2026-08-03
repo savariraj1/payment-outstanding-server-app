@@ -48,7 +48,9 @@ async function sendDailyReport() {
 
         from: process.env.GMAIL_USER,
 
-        to: "archana@tylt.co.in",   // or your preferred recipient
+        to: "raghav@tylt.co.in",   // or your preferred recipient
+
+        cc: "raj.s@tylt.co.in",
 
         subject: `Daily Outstanding Invoice Report/Outstanding Total Amount ₹${totalOutstanding.toLocaleString("en-IN")}`,
 
