@@ -98,19 +98,31 @@ async function sendReminder(customerName, invoices, email) {
     }
 
     // Send email
-    const info = await transporter.sendMail({
+    try {
 
-        from: process.env.GMAIL_USER,
+    console.log("Sending mail to:", emailList);
 
-        to: emailList,
+        const info = await transporter.sendMail({
 
-        cc: ccList,
+            from: process.env.GMAIL_USER,
 
-        subject: template.subject,
+            to: emailList,
 
-        html: template.html
+            cc: ccList,
 
-    });
+            subject: template.subject,
+
+            html: template.html
+
+        });
+
+     console.log("Mail sent:", info.messageId);
+    } catch (err) {
+
+        console.error("MAIL ERROR");
+        console.error(err);
+
+    }
 
     // IMPORTANT: return the sendMail response
     return info;
