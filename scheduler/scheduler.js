@@ -88,7 +88,7 @@ cron.schedule("0 10 * * 1", async () => {
 // 1st OR 2nd (if 1st is Sunday)
 // =====================================
 
-cron.schedule("0 11 1-2 * *", async () => {
+cron.schedule("30 14 * * *", async () => {
 
     if (!isMonthlyReminderDay()) {
 
