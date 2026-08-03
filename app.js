@@ -132,7 +132,6 @@ const exportRoutes = require("./routes/exportRoutes");
 const authRoutes = require("./routes/authRoutes");
 const importRoutes = require("./routes/importRoutes");
 const invoiceRoutes = require("./routes/invoiceRoutes");
-const testMailRoute = require("./routes/testRoutes");
 
 const allowedOrigins = [
     "https://payment-outstanding-client-app.vercel.app",
@@ -187,7 +186,6 @@ app.use("/api/export", exportRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/import", importRoutes);
 app.use("/api/invoice", invoiceRoutes);
-app.use("/api/test-mail", testMailRoute);
 
 // ======================
 // Home Page
