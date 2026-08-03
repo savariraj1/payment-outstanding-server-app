@@ -59,7 +59,11 @@ cron.schedule("0 9 * * 1-6", async () => {
 
     await sendAutomaticReminders();
 
-});
+},
+{
+    timezone: "Asia/Kolkata"
+}
+);
 
 // =====================================
 // WEEKLY
@@ -81,20 +85,24 @@ cron.schedule("0 10 * * 1", async () => {
 
     await sendAutomaticReminders();
 
-});
+},
+{
+    timezone: "Asia/Kolkata"
+}
+);
 
 // =====================================
 // MONTHLY
 // 1st OR 2nd (if 1st is Sunday)
 // =====================================
 
-cron.schedule("30 14 * * *", async () => {
+cron.schedule("0 15 * * *", async () => {
 
-    if (!isMonthlyReminderDay()) {
+    // if (!isMonthlyReminderDay()) {
 
-        console.log("Monthly Scheduler Skipped");
-        return;
-    }
+    //     console.log("Monthly Scheduler Skipped");
+    //     return;
+    // }
 
     console.log("=================================");
     console.log("Running Monthly Scheduler");
@@ -102,6 +110,9 @@ cron.schedule("30 14 * * *", async () => {
 
     await sendAutomaticReminders();
 
+},
+{
+    timezone: "Asia/Kolkata"
 });
 
 console.log("=================================");
