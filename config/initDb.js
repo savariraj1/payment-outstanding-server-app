@@ -90,10 +90,40 @@ async function initDb() {
     await createUsersTable();
     await createImportHistoryTable();
     await createInvoicesTable();
+
+    await ensureColumn(
+        "invoices",
+        "credit_note_number",
+        "VARCHAR(100) DEFAULT NULL"
+    );
     await createEmailHistoryTable();
     await seedDefaultUser();
 
     console.log("[DB] Tables ensured");
+}
+
+async function ensureColumn(table, column, definition) {
+
+    const [rows] = await db.query(
+        `
+        SHOW COLUMNS
+        FROM \`${table}\`
+        LIKE ?
+        `,
+        [column]
+    );
+
+    if (rows.length === 0) {
+
+        console.log(`Adding column ${column}...`);
+
+        await db.query(`
+            ALTER TABLE \`${table}\`
+            ADD COLUMN \`${column}\` ${definition}
+        `);
+
+    }
+
 }
 
 module.exports = initDb;

@@ -19,7 +19,8 @@ const REQUIRED_COLUMNS = [
 const VALID_STATUS = [
     "Unpaid",
     "Part Paid",
-    "Paid"
+    "Paid",
+    "Credit Note"
 ];
 
 /*
