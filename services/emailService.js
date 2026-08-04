@@ -96,13 +96,13 @@ async function sendReminder(customerName, invoices, email) {
             .map(e => e.trim())
             .filter(Boolean);
     }
-
+    let info;
     // Send email
     try {
 
     console.log("Sending mail to:", emailList);
 
-        const info = await transporter.sendMail({
+        info = await transporter.sendMail({
 
             from: process.env.GMAIL_USER,
 
