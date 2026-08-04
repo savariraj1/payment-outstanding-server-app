@@ -1,7 +1,8 @@
-const transporter = require("./gmail");
+const resend = require("./gmail");
 const generatePDF = require("../reports/emailPdfReport");
 const calculateAgeing = require("./ageing");
 const invoiceModel = require("../models/invoiceModel");
+const fs = require("fs");
 
 async function sendDailyReport() {
 
@@ -44,100 +45,33 @@ async function sendDailyReport() {
         inv => inv.outstanding > 0
     ).length;
 
-    await transporter.sendMail({
+    const { data, error } = await resend.emails.send({
 
-        from: process.env.GMAIL_USER,
+        from: "Accounts <accounts@tylt.co.in>",
 
-        to: "raghav@tylt.co.in",   // or your preferred recipient
+        to: ["raghav@tylt.co.in"],
 
-        cc: "raj.s@tylt.co.in",
+        cc: ["raj.s@tylt.co.in"],
 
         subject: `Daily Outstanding Invoice Report/Outstanding Total Amount ₹${totalOutstanding.toLocaleString("en-IN")}`,
 
-        html: `
-        <div style="font-family:Arial,sans-serif;line-height:1.6;color:#333">
-
-            <h2 style="color:#0d6efd;">
-                Daily Outstanding Invoice Report
-            </h2>
-
-            <p>Dear Sir/Madam,</p>
-
-            <p>
-                Please find attached the latest Outstanding Invoice Report.
-                The report contains the current status of all outstanding
-                invoices along with their ageing details.
-            </p>
-
-            <table style="border-collapse:collapse;width:420px;margin:20px 0;">
-
-                <tr>
-                    <td style="padding:8px;border:1px solid #ddd;">
-                        Total Invoices
-                    </td>
-                    <td style="padding:8px;border:1px solid #ddd;font-weight:bold;">
-                        ${totalInvoices}
-                    </td>
-                </tr>
-
-                <tr>
-                    <td style="padding:8px;border:1px solid #ddd;">
-                        Pending Invoices
-                    </td>
-                    <td style="padding:8px;border:1px solid #ddd;font-weight:bold;">
-                        ${pendingInvoices}
-                    </td>
-                </tr>
-
-                <tr>
-                    <td style="padding:8px;border:1px solid #ddd;">
-                        Amount Received
-                    </td>
-                    <td style="padding:8px;border:1px solid #ddd;font-weight:bold;color:green;">
-                        ₹${totalReceived.toLocaleString("en-IN")}
-                    </td>
-                </tr>
-
-                <tr>
-                    <td style="padding:8px;border:1px solid #ddd;">
-                        Outstanding Amount
-                    </td>
-                    <td style="padding:8px;border:1px solid #ddd;font-weight:bold;color:red;">
-                        ₹${totalOutstanding.toLocaleString("en-IN")}
-                    </td>
-                </tr>
-
-            </table>
-
-            <p>
-                <strong>Outstanding Amount Remaining:</strong>
-                ₹${totalOutstanding.toLocaleString("en-IN")}
-            </p>
-
-            <p>
-                Kindly review the attached report and initiate the necessary
-                follow-up actions for pending payments.
-            </p>
-
-            <br>
-
-            <p>Regards,</p>
-
-            <p><strong>Payment Outstanding System</strong></p>
-
-        </div>
-        `,
+        html: `...`,
 
         attachments: [
             {
                 filename: "Outstanding_Report.pdf",
-                path: file
+                content: fs.readFileSync(file)
             }
         ]
 
     });
 
-    console.log("Daily report sent.");
+    if (error) {
+        console.error("Daily Report Error:", error);
+        return;
+    }
+
+    console.log("Daily report sent:", data.id);
 
 }
 
