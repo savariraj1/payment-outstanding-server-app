@@ -186,7 +186,6 @@ app.use("/api/export", exportRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/import", importRoutes);
 app.use("/api/invoice", invoiceRoutes);
-app.use("/api/test-mail", testRoutes)
 
 // ======================
 // Home Page
