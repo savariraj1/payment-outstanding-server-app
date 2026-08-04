@@ -1,30 +1,31 @@
 require("dotenv").config();
 
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 async function sendTestMail() {
     try {
-        const transporter = nodemailer.createTransport({
-            service: "gmail",
-            auth: {
-                user: process.env.GMAIL_USER,
-                pass: process.env.GMAIL_APP_PASSWORD
-            }
-        });
 
-        await transporter.verify();
+        const { data, error } = await resend.emails.send({
 
-        console.log("✅ Gmail Connected Successfully");
+            from: "Accounts <accounts@tylt.co.in>",
 
-        const info = await transporter.sendMail({
-            from: process.env.GMAIL_USER,
-            to: process.env.GMAIL_USER,
+            to: [process.env.GMAIL_USER],
+
             subject: "Payment Outstanding System Test",
-            html: "<h2>Congratulations!</h2><p>Your Gmail integration is working.</p>"
+
+            html: "<h2>Congratulations!</h2><p>Your Resend integration is working.</p>"
+
         });
+
+        if (error) {
+            console.error(error);
+            return;
+        }
 
         console.log("✅ Email Sent");
-        console.log(info.messageId);
+        console.log(data);
 
     } catch (err) {
         console.error(err);
