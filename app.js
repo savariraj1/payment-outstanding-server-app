@@ -123,7 +123,7 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 
-const testRoutes = require("./routes/testRoutes");
+// const testRoutes = require("./routes/testRoutes");
 const outstandingRoutes = require("./routes/outstandingRoutes");
 const emailRoutes = require("./routes/emailRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
@@ -178,7 +178,7 @@ app.use(
 // ======================
 // API Routes
 // ======================
-app.use("/api", testRoutes);
+// app.use("/api", testRoutes);
 app.use("/api/outstanding", outstandingRoutes);
 app.use("/api/email", emailRoutes);
 app.use("/api/dashboard", dashboardRoutes);
