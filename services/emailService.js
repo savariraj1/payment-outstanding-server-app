@@ -123,7 +123,78 @@
 //     sendReminder
 // };
 
-const resend = require("./gmail");
+// const resend = require("./gmail");
+// const getEmailTemplate = require("../templates/emailTemplates");
+
+// async function sendReminder(customerName, invoices, email) {
+
+//     const template = getEmailTemplate(customerName, invoices);
+
+//     let emailList = Array.isArray(email)
+//         ? email
+//         : (email || "")
+//               .split(/[;,]/)
+//               .map(e => e.trim())
+//               .filter(Boolean);
+
+//     let ccList = process.env.EMAIL_CC
+//         ? process.env.EMAIL_CC
+//               .split(/[;,]/)
+//               .map(e => e.trim())
+//               .filter(Boolean)
+//         : [];
+
+//     const hasMoreThan60 = invoices.some(inv =>
+//         Number(inv.outstanding || 0) > 0 &&
+//         (inv.ageingBucket === "61-90" || inv.ageingBucket === "90+")
+//     );
+
+//     if (hasMoreThan60 && process.env.EMAIL_ESCALATION_CC) {
+//         if (process.env.EMAIL_ESCALATION_CC) {
+//             ccList.push(
+//                 ...process.env.EMAIL_ESCALATION_CC
+//                     .split(/[;,]/)
+//                     .map(e => e.trim())
+//                     .filter(Boolean)
+//             );
+//         }
+//     }
+
+//     try {
+
+//         const { data, error } = await resend.emails.send({
+
+//             from: "Accounts <accounts@tylt.co.in>",
+
+//             to: emailList,
+
+//             cc: ccList,
+
+//             subject: template.subject,
+
+//             html: template.html
+
+//         });
+
+//         if (error) {
+//             console.error(error);
+//             return;
+//         }
+
+//         console.log("Mail sent:", data.id);
+
+//     } catch (err) {
+
+//         console.error(err);
+
+//     }
+// }
+
+// module.exports = {
+//     sendReminder
+// };
+
+const brevo = require("./gmail");
 const getEmailTemplate = require("../templates/emailTemplates");
 
 async function sendReminder(customerName, invoices, email) {
@@ -150,44 +221,44 @@ async function sendReminder(customerName, invoices, email) {
     );
 
     if (hasMoreThan60 && process.env.EMAIL_ESCALATION_CC) {
-        if (process.env.EMAIL_ESCALATION_CC) {
-            ccList.push(
-                ...process.env.EMAIL_ESCALATION_CC
-                    .split(/[;,]/)
-                    .map(e => e.trim())
-                    .filter(Boolean)
-            );
-        }
+        ccList.push(
+            ...process.env.EMAIL_ESCALATION_CC
+                .split(/[;,]/)
+                .map(e => e.trim())
+                .filter(Boolean)
+        );
     }
+
+    const sendSmtpEmail = {
+
+        sender: {
+            name: "Accounts",
+            email: "accounts@tylt.co.in"
+        },
+
+        to: emailList.map(email => ({ email })),
+
+        cc: ccList.map(email => ({ email })),
+
+        subject: template.subject,
+
+        htmlContent: template.html
+
+    };
 
     try {
 
-        const { data, error } = await resend.emails.send({
+        const result = await brevo.sendTransacEmail(sendSmtpEmail);
 
-            from: "Accounts <accounts@tylt.co.in>",
-
-            to: emailList,
-
-            cc: ccList,
-
-            subject: template.subject,
-
-            html: template.html
-
-        });
-
-        if (error) {
-            console.error(error);
-            return;
-        }
-
-        console.log("Mail sent:", data.id);
+        console.log("Mail Sent");
+        console.log(result);
 
     } catch (err) {
 
         console.error(err);
 
     }
+
 }
 
 module.exports = {
