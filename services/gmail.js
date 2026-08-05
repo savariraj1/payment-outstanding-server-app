@@ -24,4 +24,6 @@ const SibApiV3Sdk = require("sib-api-v3-sdk");
 SibApiV3Sdk.ApiClient.instance.authentications["api-key"].apiKey =
     process.env.SENDINBLUE_KEY;
 
-module.exports = SibApiV3Sdk;
+const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+
+module.exports = apiInstance;
