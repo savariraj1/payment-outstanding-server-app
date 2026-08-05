@@ -19,13 +19,9 @@
 
 // module.exports = transporter;
 
-const SibApiV3Sdk = require("@getbrevo/brevo");
+const SibApiV3Sdk = require("sib-api-v3-sdk");
 
-const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+SibApiV3Sdk.ApiClient.instance.authentications["api-key"].apiKey =
+    process.env.SENDINBLUE_KEY;
 
-apiInstance.setApiKey(
-    SibApiV3Sdk.TransactionalEmailsApiApiKeys.apiKey,
-    process.env.SENDINBLUE_KEY
-);
-
-module.exports = apiInstance;
+module.exports = SibApiV3Sdk;
