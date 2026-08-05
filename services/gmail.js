@@ -19,8 +19,13 @@
 
 // module.exports = transporter;
 
-const { Resend } = require("resend");
+const SibApiV3Sdk = require("@getbrevo/brevo");
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
 
-module.exports = resend;
+apiInstance.setApiKey(
+    SibApiV3Sdk.TransactionalEmailsApiApiKeys.apiKey,
+    process.env.SENDINBLUE_KEY
+);
+
+module.exports = apiInstance;
