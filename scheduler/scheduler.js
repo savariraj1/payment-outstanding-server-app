@@ -96,13 +96,13 @@ cron.schedule("0 10 * * 1", async () => {
 // 1st OR 2nd (if 1st is Sunday)
 // =====================================
 
-cron.schedule("0 16 * * *", async () => {
+cron.schedule("0 11 1,2 * *", async () => {
 
-    // if (!isMonthlyReminderDay()) {
+    if (!isMonthlyReminderDay()) {
 
-    //     console.log("Monthly Scheduler Skipped");
-    //     return;
-    // }
+        console.log("Monthly Scheduler Skipped");
+        return;
+    }
 
     console.log("=================================");
     console.log("Running Monthly Scheduler");

@@ -201,18 +201,17 @@ async function sendReminder(customerName, invoices, email) {
 
     const template = getEmailTemplate(customerName, invoices);
 
-    let emailList = Array.isArray(email)
-        ? email
-        : (email || "")
-              .split(/[;,]/)
-              .map(e => e.trim())
-              .filter(Boolean);
+    console.log("RAW EMAIL:", email);
+
+    let emailList = normalizeEmails(email);
+
+    if (emailList.length === 0) {
+        console.log("Skipping customer - No valid email found:", email);
+        return false;
+    }
 
     let ccList = process.env.EMAIL_CC
-        ? process.env.EMAIL_CC
-              .split(/[;,]/)
-              .map(e => e.trim())
-              .filter(Boolean)
+        ? normalizeEmails(process.env.EMAIL_CC)
         : [];
 
     const hasMoreThan60 = invoices.some(inv =>
@@ -222,12 +221,14 @@ async function sendReminder(customerName, invoices, email) {
 
     if (hasMoreThan60 && process.env.EMAIL_ESCALATION_CC) {
         ccList.push(
-            ...process.env.EMAIL_ESCALATION_CC
-                .split(/[;,]/)
-                .map(e => e.trim())
-                .filter(Boolean)
+            ...normalizeEmails(process.env.EMAIL_ESCALATION_CC)
         );
     }
+
+    const finalCC = [...new Set(ccList)];
+
+    console.log("Normalized:", emailList);
+    console.log("Normalized CC:", finalCC);
 
     const sendSmtpEmail = {
 
@@ -238,26 +239,70 @@ async function sendReminder(customerName, invoices, email) {
 
         to: emailList.map(email => ({ email })),
 
-        cc: ccList.map(email => ({ email })),
+        cc: finalCC.map(email => ({ email })),
 
         subject: template.subject,
 
         htmlContent: template.html
 
     };
+    console.log("TO:", sendSmtpEmail.to);
+    console.log("CC:", sendSmtpEmail.cc);
 
     try {
+        console.log("Sending to:", JSON.stringify(sendSmtpEmail, null, 2));
 
         const result = await brevo.sendTransacEmail(sendSmtpEmail);
 
-        console.log("Mail Sent");
+        console.log("Mail Sent", result.body);
         console.log(result);
 
-    } catch (err) {
+        return true;
 
-        console.error(err);
+    }  catch (err) {
+
+        console.error("Brevo Error:");
+        console.error(JSON.stringify(err.response?.body || err, null, 2));
+
+        return false;
+    }
+
+}
+
+function normalizeEmails(value) {
+
+    if (!value) return [];
+
+    const input = Array.isArray(value)
+        ? value.join(",")
+        : String(value);
+
+    const emails = input
+        .replace(/["']/g, "")
+        .replace(/[\r\n\t]+/g, ",")
+        .replace(/;/g, ",")
+        .split(",")
+        .map(e => e.trim())
+        .filter(Boolean);
+
+    const validEmails = [];
+    const invalidEmails = [];
+
+    for (const email of emails) {
+
+        if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            validEmails.push(email);
+        } else {
+            invalidEmails.push(email);
+        }
 
     }
+
+    if (invalidEmails.length) {
+        console.log("Invalid emails removed:", invalidEmails);
+    }
+
+    return [...new Set(validEmails)];
 
 }
 
