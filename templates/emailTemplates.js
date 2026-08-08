@@ -185,6 +185,10 @@ function getEmailTemplate(customerName, invoices) {
 
         const outstanding = Number(inv.outstanding  || 0);
 
+        if (outstanding <= 0) {
+            return;
+        }
+
         let bucket0to30 = "";
         let bucket31to60 = "";
         let bucket61to90 = "";

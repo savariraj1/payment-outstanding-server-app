@@ -45,14 +45,26 @@ exports.updateInvoice = async (req, res) => {
         const credit =
             Number(creditNoteAmount || 0);
 
-        const outstanding =
-            invoiceAmount -
-            received -
-            credit;
+        const outstanding = Math.max(
+            invoiceAmount - received - credit,
+            0
+        );
+
+        let finalPaymentStatus;
+
+        if (outstanding <= 0) {
+            finalPaymentStatus = "Paid";
+        }
+        else if (received > 0 || credit > 0) {
+            finalPaymentStatus = "Part Paid";
+        }
+        else {
+            finalPaymentStatus = "Unpaid";
+        }
 
         await invoiceModel.update(id, {
 
-            paymentStatus,
+            paymentStatus: finalPaymentStatus,
 
             receivedAmount: received,
 

@@ -82,7 +82,7 @@ exports.sendTestEmail = async (req, res) => {
         res.json({
             success: true,
             message: "Test email sent.",
-            messageId: info.messageId
+            // messageId: info.messageId
         });
 
     }

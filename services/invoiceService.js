@@ -1,46 +1,68 @@
 const calculateAgeing = require("./ageing");
 const invoiceModel = require("../models/invoiceModel");
 
-exports.getCustomerOutstanding = async(customer)=>{
+async function getCustomerOutstanding(company) {
 
-    const rows = await invoiceModel.findOutstandingByCompany(customer);
+    const rows =
+        await invoiceModel.findOutstandingByCompany(company);
 
     console.log("Rows from DB:");
-console.log(rows);
+    console.log(rows);
 
-    return rows.map(r=>{
-        const ageing=calculateAgeing(r.dueDate);
+    return rows
+        .map(r => {
 
-        return{
+            const outstanding = Number(r.outstanding || 0);
 
-            invoiceNo:r.invoiceNo,
+            // Safety check
+            if (outstanding <= 0) {
+                return null;
+            }
 
-            customer:r.customer,
+            const ageing =
+                calculateAgeing(r.dueDate);
 
-            company:r.company,
+            return {
 
-            invoiceDate:r.invoiceDate,
+                id: r.id,
 
-            dueDate:r.dueDate,
+                invoiceNo: r.invoiceNo,
 
-            outstanding:Number(r.outstanding),
+                customer: r.customer,
 
-            email:r.email,
+                company: r.company,
 
-            ageingBucket:r.ageingBucket || ageing.bucket
+                email: r.email,
 
-        };
+                invoiceDate: r.invoiceDate,
 
-    });
+                dueDate: r.dueDate,
+
+                invoiceAmount: Number(r.invoiceAmount || 0),
+
+                receivedAmount: Number(r.receivedAmount || 0),
+
+                creditNoteAmount:
+                    Number(r.creditNoteAmount || 0),
+
+                outstanding,
+
+                paymentStatus: r.paymentStatus,
+
+                ageingBucket:
+                    r.ageingBucket || ageing.bucket
+
+            };
+
+        })
+        .filter(Boolean);
 
 }
 
 async function getOutstandingCustomers() {
-    return invoiceModel.findOutstandingCompanies();
-}
 
-async function getCustomerOutstanding(company) {
-    return invoiceModel.findOutstandingByCompany(company);
+    return invoiceModel.findOutstandingCompanies();
+
 }
 
 module.exports = {

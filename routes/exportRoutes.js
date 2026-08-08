@@ -64,6 +64,7 @@ const invoiceModel = require("../models/invoiceModel");
 
 const generateExcel = require("../reports/excelReport");
 const generatePDF = require("../reports/pdfReport");
+const generateCompanyAgingExcel = require("../reports/companyAgingExcel");
 const { exportCompanyPDF } = require("../controllers/exportController");
 
 async function getFilteredInvoices(req) {
@@ -164,5 +165,44 @@ router.get(
     "/pdf/company",
     exportCompanyPDF
 );
+
+// ==========================================================
+// COMPANY-WISE AGEING EXCEL
+// ==========================================================
+
+router.get("/excel/company", async (req, res) => {
+
+    try {
+
+        const invoices = await getFilteredInvoices(req);
+
+        await generateCompanyAgingExcel(
+            invoices,
+            res
+        );
+
+    }
+    catch (err) {
+
+        console.error(
+            "Company Ageing Excel Error:",
+            err
+        );
+
+        if (!res.headersSent) {
+
+            res.status(500).json({
+
+                success: false,
+
+                message: err.message
+
+            });
+
+        }
+
+    }
+
+});
 
 module.exports = router;

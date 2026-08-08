@@ -86,6 +86,21 @@ async function createEmailHistoryTable() {
     `);
 }
 
+async function createReminderControlsTable() {
+
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS reminder_controls (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            company_name VARCHAR(255) NOT NULL UNIQUE,
+            paused_until DATE NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                ON UPDATE CURRENT_TIMESTAMP
+        )
+    `);
+
+}
+
 async function initDb() {
     await createUsersTable();
     await createImportHistoryTable();
@@ -97,6 +112,7 @@ async function initDb() {
         "VARCHAR(100) DEFAULT NULL"
     );
     await createEmailHistoryTable();
+    await createReminderControlsTable();
     await seedDefaultUser();
 
     console.log("[DB] Tables ensured");

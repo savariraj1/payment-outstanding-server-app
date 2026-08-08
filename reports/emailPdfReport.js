@@ -3,15 +3,21 @@ const fs = require("fs");
 const path = require("path");
 
 function formatAmount(value) {
-    return Number(value || 0).toLocaleString("en-IN");
+
+    return Number(value || 0)
+        .toLocaleString("en-IN");
+
 }
 
-function formatDate(date) {
-    if (!date) return "";
-    return new Date(date).toLocaleDateString("en-GB");
-}
-
-function drawCell(doc, x, y, w, h, text, options = {}) {
+function drawCell(
+    doc,
+    x,
+    y,
+    w,
+    h,
+    text,
+    options = {}
+) {
 
     const {
         fill = null,
@@ -22,9 +28,17 @@ function drawCell(doc, x, y, w, h, text, options = {}) {
     } = options;
 
     if (fill) {
-        doc.rect(x, y, w, h).fillAndStroke(fill, "#000");
+
+        doc
+            .rect(x, y, w, h)
+            .fillAndStroke(fill, "#000");
+
     } else {
-        doc.rect(x, y, w, h).stroke();
+
+        doc
+            .rect(x, y, w, h)
+            .stroke();
+
     }
 
     doc.fillColor(color);
@@ -48,326 +62,628 @@ function drawCell(doc, x, y, w, h, text, options = {}) {
     );
 
     doc.fillColor("black");
+
 }
+
+
+// ==========================================================
+// GROUP INVOICES COMPANY-WISE
+// ==========================================================
+
+function groupInvoicesByCompany(invoices) {
+
+    const companies = {};
+
+    invoices.forEach(inv => {
+
+        // Safety check
+        const outstanding =
+            Number(inv.outstanding || 0);
+
+        // Paid invoices should never enter report
+        if (outstanding <= 0) {
+            return;
+        }
+
+        const company =
+            inv.company || "Unknown Company";
+
+        if (!companies[company]) {
+
+            companies[company] = {
+
+                company,
+
+                invoiceCount: 0,
+
+                invoiceAmount: 0,
+
+                outstanding: 0,
+
+                total0to30: 0,
+
+                total31to60: 0,
+
+                total61to90: 0,
+
+                total90Plus: 0
+
+            };
+
+        }
+
+        const companyData =
+            companies[company];
+
+        const invoiceAmount =
+            Number(inv.amount || 0);
+
+        companyData.invoiceCount++;
+
+        companyData.invoiceAmount +=
+            invoiceAmount;
+
+        companyData.outstanding +=
+            outstanding;
+
+
+        // ======================================================
+        // AGEING
+        // Only outstanding amount is placed into ageing bucket
+        // ======================================================
+
+        switch (inv.ageingBucket) {
+
+            case "0-30":
+
+                companyData.total0to30 +=
+                    outstanding;
+
+                break;
+
+
+            case "31-60":
+
+                companyData.total31to60 +=
+                    outstanding;
+
+                break;
+
+
+            case "61-90":
+
+                companyData.total61to90 +=
+                    outstanding;
+
+                break;
+
+
+            case "90+":
+
+                companyData.total90Plus +=
+                    outstanding;
+
+                break;
+
+        }
+
+    });
+
+    return Object.values(companies);
+
+}
+
+
+// ==========================================================
+// GENERATE PDF
+// ==========================================================
 
 async function generatePDF(invoices) {
 
     return new Promise((resolve, reject) => {
 
-        const uploadDir = path.join(__dirname, "../uploads");
+        const uploadDir =
+            path.join(__dirname, "../uploads");
 
         if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
+
+            fs.mkdirSync(uploadDir, {
+                recursive: true
+            });
+
         }
 
-        const filePath = path.join(uploadDir, "Outstanding_Report.pdf");
+        const filePath =
+            path.join(
+                uploadDir,
+                "Outstanding_Report.pdf"
+            );
 
-        const doc = new PDFDocument({
-            size: "A4",
-            layout: "landscape",
-            margin: 10,
-            bufferPages: true
-        });
+        const doc =
+            new PDFDocument({
 
-        const stream = fs.createWriteStream(filePath);
+                size: "A4",
+
+                layout: "landscape",
+
+                margin: 10,
+
+                bufferPages: true
+
+            });
+
+        const stream =
+            fs.createWriteStream(filePath);
 
         doc.pipe(stream);
 
-        // ==========================================================
+
+        // ======================================================
+        // GROUP
+        // ======================================================
+
+        const companies =
+            groupInvoicesByCompany(invoices);
+
+
+        // ======================================================
         // HEADER
-        // ==========================================================
+        // ======================================================
 
         doc
             .font("Helvetica-Bold")
             .fontSize(22)
             .fillColor("#0d6efd")
-            .text("TYLT Mobility Pvt. Ltd.", 110, 25);
+            .text(
+                "TYLT Mobility Pvt. Ltd.",
+                110,
+                25
+            );
 
         doc
             .font("Helvetica")
             .fontSize(14)
             .fillColor("black")
-            .text("Payment Outstanding Report", 110, 58);
+            .text(
+                "Payment Outstanding Report",
+                110,
+                58
+            );
 
         doc
             .fontSize(11)
             .text(
                 "Report Date : " +
-                new Date().toLocaleDateString("en-GB"),
+                new Date()
+                    .toLocaleDateString("en-GB"),
                 650,
                 40
             );
 
-        doc.moveTo(30, 90).lineTo(810, 90).stroke();
+        doc
+            .moveTo(30, 90)
+            .lineTo(810, 90)
+            .stroke();
 
-        // ==========================================================
+
+        // ======================================================
         // SUMMARY
-        // ==========================================================
+        // ======================================================
 
         let totalOutstanding = 0;
-        let totalInvoices = invoices.length;
-        let pendingInvoices = 0;
-        let paidInvoices = 0;
-        let receivedAmount = 0;
 
-        invoices.forEach(inv => {
+        let totalInvoices = 0;
 
-            totalOutstanding += Number(inv.outstanding || 0);
-            receivedAmount += Number(inv.paidAmount || 0);
+        companies.forEach(company => {
 
-            if (inv.status === "Paid")
-                paidInvoices++;
-            else
-                pendingInvoices++;
+            totalOutstanding +=
+                company.outstanding;
+
+            totalInvoices +=
+                company.invoiceCount;
 
         });
+
 
         const summary = [
 
             {
                 title: "Total Outstanding",
-                value: formatAmount(totalOutstanding)
-            },
 
-            {
-                title: "Total Invoices",
-                value: totalInvoices
+                value:
+                    formatAmount(
+                        totalOutstanding
+                    )
             },
 
             {
                 title: "Pending Invoices",
-                value: pendingInvoices
+
+                value:
+                    totalInvoices
             },
 
             {
-                title: "Paid Invoices",
-                value: paidInvoices
-            },
+                title: "Companies",
 
-            {
-                title: "Received Amount",
-                value: formatAmount(receivedAmount)
+                value:
+                    companies.length
             }
 
         ];
 
+
         let cardX = 30;
+
 
         summary.forEach(card => {
 
-            drawCell(doc, cardX, 110, 156, 35, card.title, {
-                fill: "#0d6efd",
-                color: "white",
-                bold: true,
-                fontSize: 11
-            });
+            drawCell(
+                doc,
+                cardX,
+                110,
+                250,
+                35,
+                card.title,
+                {
+                    fill: "#0d6efd",
+                    color: "white",
+                    bold: true,
+                    fontSize: 11
+                }
+            );
 
-            drawCell(doc, cardX, 145, 156, 40, card.value, {
-                bold: true,
-                fontSize: 18
-            });
 
-            cardX += 156;
+            drawCell(
+                doc,
+                cardX,
+                145,
+                250,
+                40,
+                card.value,
+                {
+                    bold: true,
+                    fontSize: 18
+                }
+            );
+
+
+            cardX += 250;
 
         });
 
-        // ==========================================================
+
+        // ======================================================
         // TABLE
-        // ==========================================================
+        // ======================================================
 
         let tableY = 210;
 
+
         const columns = [
 
-            { title: "Invoice No", width: 50 },
+            {
+                title: "Company",
+                width: 175
+            },
 
-            { title: "Company", width: 130 },
+            {
+                title: "Invoices",
+                width: 55
+            },
 
-            { title: "Invoice Date", width: 55 },
+            {
+                title: "Invoice Amt",
+                width: 85
+            },
 
-            { title: "Due Date", width: 55 },
+            {
+                title: "0-30",
+                width: 65
+            },
 
-            { title: "Invoice Amt", width: 65 },
+            {
+                title: "31-60",
+                width: 65
+            },
 
-            { title: "0-30", width: 55 },
+            {
+                title: "61-90",
+                width: 65
+            },
 
-            { title: "31-60", width: 55 },
+            {
+                title: "90+",
+                width: 65
+            },
 
-            { title: "61-90", width: 55 },
-
-            { title: "90+", width: 55 },
-
-            { title: "Outstanding", width: 80 },
-
-            { title: "Received", width: 80 },
-
-            { title: "Status", width: 60 }
+            {
+                title: "Outstanding",
+                width: 95
+            }
 
         ];
 
+
+        // ======================================================
+        // TABLE HEADER
+        // ======================================================
+
         let x = 30;
+
 
         columns.forEach(col => {
 
-            drawCell(doc, x, tableY, col.width, 30, col.title, {
-                fill: "#0d6efd",
-                color: "white",
-                bold: true
-            });
+            drawCell(
+                doc,
+                x,
+                tableY,
+                col.width,
+                30,
+                col.title,
+                {
+                    fill: "#0d6efd",
+                    color: "white",
+                    bold: true
+                }
+            );
 
             x += col.width;
 
         });
 
+
         tableY += 30;
 
-        let totalInvoiceAmount = 0;
-        let total0 = 0;
-        let total31 = 0;
-        let total61 = 0;
-        let total90 = 0;
 
-        invoices.forEach((inv, index) => {
+        // ======================================================
+        // GRAND TOTALS
+        // ======================================================
 
-            const amount = Number(inv.amount || 0);
-            const outstanding = Number(inv.outstanding || 0);
-            const paid = Number(inv.paidAmount || 0);
+        let grandInvoiceCount = 0;
 
-            totalInvoiceAmount += amount;
+        let grandInvoiceAmount = 0;
 
-            let d0 = "";
-            let d31 = "";
-            let d61 = "";
-            let d90 = "";
+        let grand0 = 0;
 
-            switch (inv.ageingBucket) {
+        let grand31 = 0;
 
-                case "0-30":
-                    d0 = formatAmount(outstanding);
-                    total0 += outstanding;
-                    break;
+        let grand61 = 0;
 
-                case "31-60":
-                    d31 = formatAmount(outstanding);
-                    total31 += outstanding;
-                    break;
+        let grand90 = 0;
 
-                case "61-90":
-                    d61 = formatAmount(outstanding);
-                    total61 += outstanding;
-                    break;
+        let grandOutstanding = 0;
 
-                case "90+":
-                    d90 = formatAmount(outstanding);
-                    total90 += outstanding;
-                    break;
+
+        // ======================================================
+        // COMPANY ROWS
+        // ======================================================
+
+        companies.forEach(
+            (company, index) => {
+
+                grandInvoiceCount +=
+                    company.invoiceCount;
+
+                grandInvoiceAmount +=
+                    company.invoiceAmount;
+
+                grand0 +=
+                    company.total0to30;
+
+                grand31 +=
+                    company.total31to60;
+
+                grand61 +=
+                    company.total61to90;
+
+                grand90 +=
+                    company.total90Plus;
+
+                grandOutstanding +=
+                    company.outstanding;
+
+
+                const row = [
+
+                    company.company,
+
+                    company.invoiceCount,
+
+                    formatAmount(
+                        company.invoiceAmount
+                    ),
+
+                    formatAmount(
+                        company.total0to30
+                    ),
+
+                    formatAmount(
+                        company.total31to60
+                    ),
+
+                    formatAmount(
+                        company.total61to90
+                    ),
+
+                    formatAmount(
+                        company.total90Plus
+                    ),
+
+                    formatAmount(
+                        company.outstanding
+                    )
+
+                ];
+
+
+                x = 30;
+
+
+                row.forEach(
+                    (cell, i) => {
+
+                        drawCell(
+                            doc,
+                            x,
+                            tableY,
+                            columns[i].width,
+                            28,
+                            cell,
+                            {
+
+                                fill:
+                                    index % 2
+                                        ? "#F7F7F7"
+                                        : "#FFFFFF",
+
+                                bold:
+                                    i === 0,
+
+                                align:
+                                    i >= 2
+                                        ? "right"
+                                        : "center"
+
+                            }
+                        );
+
+                        x +=
+                            columns[i].width;
+
+                    }
+                );
+
+
+                tableY += 28;
+
+
+                // ==================================================
+                // NEW PAGE
+                // ==================================================
+
+                if (tableY > 500) {
+
+                    doc.addPage({
+
+                        size: "A4",
+
+                        layout: "landscape",
+
+                        margin: 30
+
+                    });
+
+                    tableY = 40;
+
+                    x = 30;
+
+
+                    columns.forEach(col => {
+
+                        drawCell(
+                            doc,
+                            x,
+                            tableY,
+                            col.width,
+                            30,
+                            col.title,
+                            {
+                                fill: "#0d6efd",
+                                color: "white",
+                                bold: true
+                            }
+                        );
+
+                        x += col.width;
+
+                    });
+
+
+                    tableY += 30;
+
+                }
 
             }
+        );
 
-            const row = [
 
-                inv.invoiceNo,
-                inv.company,
-                formatDate(inv.invoiceDate),
-                formatDate(inv.dueDate),
-                formatAmount(amount),
-                d0,
-                d31,
-                d61,
-                d90,
-                formatAmount(outstanding),
-                formatAmount(paid),
-                inv.status
+        // ======================================================
+        // GRAND TOTAL
+        // ======================================================
 
-            ];
+        const totals = [
 
-            x = 30;
+            "GRAND TOTAL",
 
-            row.forEach((cell, i) => {
+            grandInvoiceCount,
+
+            formatAmount(
+                grandInvoiceAmount
+            ),
+
+            formatAmount(grand0),
+
+            formatAmount(grand31),
+
+            formatAmount(grand61),
+
+            formatAmount(grand90),
+
+            formatAmount(
+                grandOutstanding
+            )
+
+        ];
+
+
+        x = 30;
+
+
+        totals.forEach(
+            (cell, i) => {
 
                 drawCell(
                     doc,
                     x,
-                    tableY,
+                    tableY + 10,
                     columns[i].width,
-                    24,
+                    30,
                     cell,
                     {
-                        fill: index % 2 ? "#F7F7F7" : "#FFFFFF",
-                        align: i >= 4 && i <= 10 ? "right" : "center"
+
+                        fill: "#D9EAD3",
+
+                        bold: true,
+
+                        align:
+                            i >= 2
+                                ? "right"
+                                : "center"
+
                     }
                 );
 
-                x += columns[i].width;
-
-            });
-
-            tableY += 24;
-
-            if (tableY > 500) {
-
-                doc.addPage({
-                    size: "A4",
-                    layout: "landscape",
-                    margin: 30
-                });
-
-                tableY = 40;
-
-                x = 30;
-
-                columns.forEach(col => {
-
-                    drawCell(doc, x, tableY, col.width, 30, col.title, {
-                        fill: "#0d6efd",
-                        color: "white",
-                        bold: true
-                    });
-
-                    x += col.width;
-
-                });
-
-                tableY += 30;
+                x +=
+                    columns[i].width;
 
             }
+        );
 
-        });
 
-        const totals = [
+        // ======================================================
+        // FOOTER
+        // ======================================================
 
-            "TOTAL",
-            "",
-            "",
-            "",
-            formatAmount(totalInvoiceAmount),
-            formatAmount(total0),
-            formatAmount(total31),
-            formatAmount(total61),
-            formatAmount(total90),
-            formatAmount(total0 + total31 + total61 + total90),
-            formatAmount(receivedAmount),
-            ""
+        const pages =
+            doc.bufferedPageRange();
 
-        ];
 
-        x = 30;
-
-        totals.forEach((cell, i) => {
-
-            drawCell(doc, x, tableY + 10, columns[i].width, 28, cell, {
-                fill: "#D9EAD3",
-                bold: true,
-                align: i >= 4 && i <= 10 ? "right" : "center"
-            });
-
-            x += columns[i].width;
-
-        });
-
-        const pages = doc.bufferedPageRange();
-
-        for (let i = 0; i < pages.count; i++) {
+        for (
+            let i = 0;
+            i < pages.count;
+            i++
+        ) {
 
             doc.switchToPage(i);
 
@@ -381,7 +697,8 @@ async function generatePDF(invoices) {
 
             doc.text(
                 "Generated On : " +
-                new Date().toLocaleDateString("en-GB"),
+                new Date()
+                    .toLocaleDateString("en-GB"),
                 540,
                 565
             );
@@ -394,14 +711,23 @@ async function generatePDF(invoices) {
 
         }
 
+
         doc.end();
 
-        stream.on("finish", () => resolve(filePath));
 
-        stream.on("error", reject);
+        stream.on(
+            "finish",
+            () => resolve(filePath)
+        );
+
+        stream.on(
+            "error",
+            reject
+        );
 
     });
 
 }
+
 
 module.exports = generatePDF;

@@ -92,17 +92,42 @@ async function findOutstandingByCompany(company) {
     const [rows] = await db.query(
         `
         SELECT
+            id,
+
             invoice_number AS invoiceNo,
             customer_name AS customer,
             company_name AS company,
+
+            email,
+
             invoice_date AS invoiceDate,
             due_date AS dueDate,
-            outstanding_amount AS outstanding,
-            ageing_bucket AS ageingBucket,
-            email
+
+            invoice_amount AS invoiceAmount,
+            received_amount AS receivedAmount,
+            credit_note_amount AS creditNoteAmount,
+
+            payment_status AS paymentStatus,
+
+            GREATEST(
+                COALESCE(invoice_amount, 0)
+                - COALESCE(received_amount, 0)
+                - COALESCE(credit_note_amount, 0),
+                0
+            ) AS outstanding,
+
+            ageing_bucket AS ageingBucket
+
         FROM invoices
+
         WHERE company_name = ?
-          AND outstanding_amount > 0
+
+        AND (
+            COALESCE(invoice_amount, 0)
+            - COALESCE(received_amount, 0)
+            - COALESCE(credit_note_amount, 0)
+        ) > 0
+
         ORDER BY due_date
         `,
         [company]
@@ -117,7 +142,12 @@ async function findOutstandingCompanies() {
     const [rows] = await db.query(`
         SELECT DISTINCT company_name
         FROM invoices
-        WHERE outstanding_amount > 0
+        WHERE
+            (
+                COALESCE(invoice_amount, 0)
+                - COALESCE(received_amount, 0)
+                - COALESCE(credit_note_amount, 0)
+            ) > 0
     `);
 
     return rows;
