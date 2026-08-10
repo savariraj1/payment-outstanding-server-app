@@ -34,7 +34,7 @@ function isWeeklyReminderDay(date = new Date()) {
 // Monday - Saturday 9 AM
 // =====================================
 
-cron.schedule("0 17 * * 1-6", async () => {
+cron.schedule("25 17 * * 1-6", async () => {
 
     console.log("=================================");
     console.log("Running Daily Scheduler");
