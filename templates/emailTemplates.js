@@ -293,7 +293,7 @@ function getEmailTemplate(customerName, invoices) {
                     <tr style="background:#0d6efd;color:#ffffff">
 
                         <th>Invoice No</th>
-                        <th>Customer</th>
+                        <th>User</th>
                         <th>Invoice Date</th>
                         <th>Due Date</th>
                         <th>0-30</th>

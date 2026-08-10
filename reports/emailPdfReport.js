@@ -178,7 +178,7 @@ function groupInvoicesByCompany(invoices) {
 // GENERATE PDF
 // ==========================================================
 
-async function generatePDF(invoices) {
+async function generatePDF(invoices, summaryData = {}) {
 
     return new Promise((resolve, reject) => {
 
@@ -225,6 +225,16 @@ async function generatePDF(invoices) {
         const companies =
             groupInvoicesByCompany(invoices);
 
+        const {
+            totalInvoices = 0,
+            pendingInvoices = 0,
+            paidInvoices = 0,
+            totalOutstanding = 0,
+            totalReceived = 0,
+            creditNoteCount = 0,
+            creditNoteValue = 0
+        } = summaryData;
+
 
         // ======================================================
         // HEADER
@@ -270,94 +280,111 @@ async function generatePDF(invoices) {
         // SUMMARY
         // ======================================================
 
-        let totalOutstanding = 0;
-
-        let totalInvoices = 0;
-
-        companies.forEach(company => {
-
-            totalOutstanding +=
-                company.outstanding;
-
-            totalInvoices +=
-                company.invoiceCount;
-
-        });
-
+        // ======================================================
+        // SUMMARY CARDS
+        // ======================================================
 
         const summary = [
 
             {
                 title: "Total Outstanding",
+                value: `₹${formatAmount(totalOutstanding)}`
+            },
 
-                value:
-                    formatAmount(
-                        totalOutstanding
-                    )
+            {
+                title: "Total Invoices",
+                value: totalInvoices
             },
 
             {
                 title: "Pending Invoices",
+                value: pendingInvoices
+            },
 
-                value:
-                    totalInvoices
+            {
+                title: "Paid Invoices",
+                value: paidInvoices
+            },
+
+            {
+                title: "Total Received",
+                value: `₹${formatAmount(totalReceived)}`
+            },
+
+            {
+                title: "Credit Notes",
+                value: creditNoteCount
+            },
+
+            {
+                title: "Credit Note Value",
+                value: `₹${formatAmount(creditNoteValue)}`
             },
 
             {
                 title: "Companies",
-
-                value:
-                    companies.length
+                value: companies.length
             }
 
         ];
 
+        // ======================================================
+        // DRAW SUMMARY CARDS
+        // ======================================================
 
-        let cardX = 30;
+        const cardWidth = 190;
+        const cardTitleHeight = 28;
+        const cardValueHeight = 38;
+        const cardGap = 5;
 
+        summary.forEach((card, index) => {
 
-        summary.forEach(card => {
+            const column = index % 4;
+            const row = Math.floor(index / 4);
 
+            const cardX =
+                30 + column * (cardWidth + cardGap);
+
+            const cardY =
+                110 + row * 75;
+
+            // Card title
             drawCell(
                 doc,
                 cardX,
-                110,
-                250,
-                35,
+                cardY,
+                cardWidth,
+                cardTitleHeight,
                 card.title,
                 {
                     fill: "#0d6efd",
                     color: "white",
                     bold: true,
-                    fontSize: 11
+                    fontSize: 9
                 }
             );
 
-
+            // Card value
             drawCell(
                 doc,
                 cardX,
-                145,
-                250,
-                40,
+                cardY + cardTitleHeight,
+                cardWidth,
+                cardValueHeight,
                 card.value,
                 {
                     bold: true,
-                    fontSize: 18
+                    fontSize: 15
                 }
             );
 
-
-            cardX += 250;
-
         });
-
 
         // ======================================================
         // TABLE
         // ======================================================
 
-        let tableY = 210;
+        let tableY = 285;
 
 
         const columns = [

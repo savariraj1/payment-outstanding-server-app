@@ -34,7 +34,7 @@ function isWeeklyReminderDay(date = new Date()) {
 // Monday - Saturday 9 AM
 // =====================================
 
-cron.schedule("25 17 * * 1-6", async () => {
+cron.schedule("0 9 * * 1-6", async () => {
 
     console.log("=================================");
     console.log("Running Daily Scheduler");
@@ -51,11 +51,11 @@ cron.schedule("25 17 * * 1-6", async () => {
     }
 
     // Skip reminder if today is Weekly day
-    // if (isWeeklyReminderDay()) {
+    if (isWeeklyReminderDay()) {
 
-    //     console.log("Daily Reminder Skipped (Weekly Reminder Day)");
-    //     return;
-    // }
+        console.log("Daily Reminder Skipped (Weekly Reminder Day)");
+        return;
+    }
 
     await sendAutomaticReminders();
 

@@ -147,21 +147,55 @@ async function sendDailyReport() {
     // GENERATE PDF
     // ==========================================================
 
-    const file = await generatePDF(invoices);
+    const file = await generatePDF(
+        invoices,
+        {
+            totalInvoices,
+            pendingInvoices,
+            paidInvoices,
+            totalOutstanding,
+            totalReceived,
+            creditNoteCount,
+            creditNoteValue
+        }
+    );
 
     // ==========================================================
     // SUMMARY
     // ==========================================================
 
-    const totalInvoices = invoices.length;
+    const totalInvoices = rows.length;
 
-    const totalOutstanding = invoices.reduce(
+    const pendingInvoices = rows.filter(
+        inv => Number(inv.outstanding_amount || 0) > 0
+    ).length;
+
+    const paidInvoices = rows.filter(
+        inv => Number(inv.outstanding_amount || 0) <= 0
+    ).length;
+
+    const totalOutstanding = rows.reduce(
         (sum, inv) =>
-            sum + Number(inv.outstanding || 0),
+            sum + Number(inv.outstanding_amount || 0),
         0
     );
 
-    const pendingInvoices = invoices.length;
+    const totalReceived = rows.reduce(
+        (sum, inv) =>
+            sum + Number(inv.received_amount || 0),
+        0
+    );
+
+    const creditNoteCount = rows.filter(
+        inv =>
+            Number(inv.credit_note_amount || 0) > 0
+    ).length;
+
+    const creditNoteValue = rows.reduce(
+        (sum, inv) =>
+            sum + Number(inv.credit_note_amount || 0),
+        0
+    );
 
     // Received amount intentionally NOT calculated
     // because this report is only for outstanding amounts.
@@ -197,7 +231,7 @@ async function sendDailyReport() {
 
         to: [
             {
-                email: "archana@tylt.co.in"
+                email: "raghav@tylt.co.in"
             }
         ],
 
