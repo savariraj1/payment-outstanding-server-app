@@ -51,11 +51,11 @@ cron.schedule("20 12 * * 1-6", async () => {
     }
 
     // Skip reminder if today is Weekly day
-    if (isWeeklyReminderDay()) {
+    // if (isWeeklyReminderDay()) {
 
-        console.log("Daily Reminder Skipped (Weekly Reminder Day)");
-        return;
-    }
+    //     console.log("Daily Reminder Skipped (Weekly Reminder Day)");
+    //     return;
+    // }
 
     await sendAutomaticReminders();
 
