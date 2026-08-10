@@ -197,7 +197,7 @@ async function sendDailyReport() {
 
         to: [
             {
-                email: "raghav@tylt.co.in"
+                email: "archana@tylt.co.in"
             }
         ],
 
