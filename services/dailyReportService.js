@@ -116,49 +116,25 @@ async function sendDailyReport() {
         return {
 
             invoiceNo: inv.invoice_number,
-
             customer: inv.customer_name,
-
             company: inv.company_name,
-
             invoiceDate: inv.invoice_date,
-
             dueDate: inv.due_date,
 
-            // Original invoice amount
             amount: invoiceAmount,
 
-            // DO NOT show received amount in outstanding report
             paidAmount: 0,
 
-            // Remaining outstanding only
             outstanding: outstanding,
 
             status: inv.payment_status,
 
-            ageingBucket:
-                ageing.bucket
+            ageingBucket: ageing.bucket
 
         };
 
     });
 
-    // ==========================================================
-    // GENERATE PDF
-    // ==========================================================
-
-    const file = await generatePDF(
-        invoices,
-        {
-            totalInvoices,
-            pendingInvoices,
-            paidInvoices,
-            totalOutstanding,
-            totalReceived,
-            creditNoteCount,
-            creditNoteValue
-        }
-    );
 
     // ==========================================================
     // SUMMARY
@@ -195,6 +171,24 @@ async function sendDailyReport() {
         (sum, inv) =>
             sum + Number(inv.credit_note_amount || 0),
         0
+    );
+
+
+    // ==========================================================
+    // GENERATE PDF
+    // ==========================================================
+
+    const file = await generatePDF(
+        invoices,
+        {
+            totalInvoices,
+            pendingInvoices,
+            paidInvoices,
+            totalOutstanding,
+            totalReceived,
+            creditNoteCount,
+            creditNoteValue
+        }
     );
 
     // Received amount intentionally NOT calculated
