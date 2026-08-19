@@ -383,4 +383,26 @@ router.post(
 );
 
 
+// ============================================================
+// UPDATE EMAIL FOR ONE INVOICE
+// ============================================================
+
+router.patch(
+    "/invoice/:id",
+    authenticateToken,
+    emailService.updateInvoiceEmail
+);
+
+
+// ============================================================
+// UPDATE EMAIL FOR ENTIRE COMPANY
+// ============================================================
+
+router.patch(
+    "/company/:company",
+    authenticateToken,
+    emailService.updateCompanyEmail
+);
+
+
 module.exports = router;

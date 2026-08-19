@@ -293,6 +293,47 @@ async function update(id, invoice) {
 
 }
 
+// ============================================================
+// UPDATE EMAIL FOR ONE INVOICE
+// ============================================================
+
+async function updateEmail(id, email) {
+
+    const [result] = await db.query(
+        `
+        UPDATE invoices
+        SET
+            email = ?,
+            updated_at = NOW()
+        WHERE id = ?
+        `,
+        [email, id]
+    );
+
+    return result;
+}
+
+
+// ============================================================
+// UPDATE EMAIL FOR ALL INVOICES OF A COMPANY
+// ============================================================
+
+async function updateCompanyEmail(company, email) {
+
+    const [result] = await db.query(
+        `
+        UPDATE invoices
+        SET
+            email = ?,
+            updated_at = NOW()
+        WHERE company_name = ?
+        `,
+        [email, company]
+    );
+
+    return result;
+}
+
 module.exports = {
     buildInvoiceFilters,
     findAll,
@@ -301,5 +342,7 @@ module.exports = {
     findByInvoiceNumber,
     findById,
     create,
-    update
+    update,
+    updateEmail,
+    updateCompanyEmail
 };

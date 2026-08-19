@@ -196,6 +196,7 @@
 
 const brevo = require("./gmail");
 const getEmailTemplate = require("../templates/emailTemplates");
+const invoiceModel = require("../models/invoiceModel")
 
 async function sendReminder(customerName, invoices, email) {
 
@@ -306,6 +307,250 @@ function normalizeEmails(value) {
 
 }
 
+
+// ============================================================
+// UPDATE EMAIL FOR ONE INVOICE
+// ============================================================
+
+async function updateInvoiceEmail(req, res) {
+
+    try {
+
+        const id = req.params.id;
+
+        const { emails } = req.body;
+
+        console.log(
+            "UPDATE INVOICE EMAIL",
+            id,
+            emails
+        );
+
+        const invoice =
+            await invoiceModel.findById(id);
+
+        if (!invoice) {
+
+            return res.status(404).json({
+
+                success: false,
+
+                message: "Invoice not found"
+
+            });
+
+        }
+
+        const emailList =
+            normalizeEmails(emails);
+
+        if (emailList.length === 0) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "At least one valid email address is required"
+
+            });
+
+        }
+
+        const emailValue =
+            emailList.join(",");
+
+        const result =
+            await invoiceModel.updateEmail(
+                id,
+                emailValue
+            );
+
+        if (
+            !result ||
+            result.affectedRows === 0
+        ) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message: "Email was not updated"
+
+            });
+
+        }
+
+        const updatedInvoice =
+            await invoiceModel.findById(id);
+
+        return res.json({
+
+            success: true,
+
+            message:
+                "Invoice email updated successfully",
+
+            data: {
+
+                id: updatedInvoice.id,
+
+                invoiceNo:
+                    updatedInvoice.invoice_number,
+
+                company:
+                    updatedInvoice.company_name,
+
+                email:
+                    updatedInvoice.email
+
+            }
+
+        });
+
+    }
+    catch (err) {
+
+        console.error(
+            "UPDATE INVOICE EMAIL ERROR:",
+            err
+        );
+
+        return res.status(500).json({
+
+            success: false,
+
+            message: err.message
+
+        });
+
+    }
+
+}
+
+
+// ============================================================
+// UPDATE EMAIL FOR ENTIRE COMPANY
+// ============================================================
+
+async function updateCompanyEmail(req, res) {
+
+    try {
+
+        const company =
+            req.params.company;
+
+        const { emails } =
+            req.body;
+
+        if (
+            !company ||
+            !company.trim()
+        ) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "Company name is required"
+
+            });
+
+        }
+
+        const emailList =
+            normalizeEmails(emails);
+
+        if (emailList.length === 0) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "At least one valid email address is required"
+
+            });
+
+        }
+
+        const emailValue =
+            emailList.join(",");
+
+        const result =
+            await invoiceModel.updateCompanyEmail(
+                company.trim(),
+                emailValue
+            );
+
+        if (
+            !result ||
+            result.affectedRows === 0
+        ) {
+
+            return res.status(404).json({
+
+                success: false,
+
+                message:
+                    "No invoices found for this company"
+
+            });
+
+        }
+
+        return res.json({
+
+            success: true,
+
+            message:
+                "Company email updated successfully",
+
+            data: {
+
+                company:
+                    company.trim(),
+
+                email:
+                    emailValue,
+
+                updatedInvoices:
+                    result.affectedRows
+
+            }
+
+        });
+
+    }
+    catch (err) {
+
+        console.error(
+            "UPDATE COMPANY EMAIL ERROR:",
+            err
+        );
+
+        return res.status(500).json({
+
+            success: false,
+
+            message: err.message
+
+        });
+
+    }
+
+}
+
+
+// ============================================================
+// EXPORTS
+// ============================================================
+
 module.exports = {
-    sendReminder
+
+    sendReminder,
+    updateInvoiceEmail,
+    updateCompanyEmail
+
 };
