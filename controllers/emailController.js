@@ -37,6 +37,7 @@
 
 const invoiceService = require("../services/invoiceService");
 const emailService = require("../services/emailService");
+const calculateAgeing = require("../services/ageing");
 
 exports.sendTestEmail = async (req, res) => {
 
@@ -48,17 +49,60 @@ exports.sendTestEmail = async (req, res) => {
         const customerInvoices =
             await invoiceService.getCustomerOutstanding(customer);
 
-        if (customerInvoices.length === 0) {
+        if (!customerInvoices || customerInvoices.length === 0) {
             return res.status(404).json({
                 success: false,
                 message: "No invoices found."
             });
         }
 
+         // ==================================================
+        // CALCULATE AGEING
+        // ==================================================
+
+        const invoicesWithAgeing =
+            customerInvoices
+                .map(inv => {
+
+                    const ageing =
+                        calculateAgeing(
+                            inv.due_date
+                        );
+
+                    return {
+
+                        ...inv,
+
+                        ageingBucket:
+                            ageing.bucket,
+
+                        ageingDays:
+                            ageing.days
+
+                    };
+
+                })
+                .filter(inv =>
+                    Number(
+                        inv.outstanding_amount || 0
+                    ) > 0
+                );
+
+
+        // ==================================================
+        // 0-30
+        // ==================================================
+
+        const zeroTo30Invoices =
+            invoicesWithAgeing.filter(
+                inv =>
+                    inv.ageingBucket === "0-30"
+            );
+
         // Collect all valid emails
         const emailList = [
             ...new Set(
-                customerInvoices
+                invoicesWithAgeing
                     .map(inv => (inv.email || "").trim())
                     .filter(email => email !== "")
             )
@@ -73,11 +117,31 @@ exports.sendTestEmail = async (req, res) => {
 
         console.log("Emails Found:", emailList);
 
+        const companyName =
+            invoicesWithAgeing[0].company_name ||
+            invoicesWithAgeing[0].company ||
+            invoicesWithAgeing[0].customer;
+
+
         const info = await emailService.sendReminder(
-            customerInvoices[0].company || customerInvoices[0].customer,
-            customerInvoices,
-            emailList
-        );
+                companyName,
+                invoicesWithAgeing,
+                emailList,
+                zeroTo30Invoices
+            );
+
+        if (!sent) {
+
+            return res.status(500).json({
+
+                success: false,
+
+                message:
+                    "Failed to send test email."
+
+            });
+
+        }
 
         res.json({
             success: true,

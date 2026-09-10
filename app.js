@@ -136,7 +136,7 @@ const invoiceRoutes = require("./routes/invoiceRoutes");
 const allowedOrigins = [
     "https://payment-outstanding-client-app.vercel.app",
     "http://localhost:3000",
-    "http://localhost:5173"
+    "http://localhost:4173"
 ];
 
 

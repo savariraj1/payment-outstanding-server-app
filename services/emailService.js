@@ -198,9 +198,9 @@ const brevo = require("./gmail");
 const getEmailTemplate = require("../templates/emailTemplates");
 const invoiceModel = require("../models/invoiceModel")
 
-async function sendReminder(customerName, invoices, email) {
+async function sendReminder(customerName, invoices, email, zeroTo30Invoices = []) {
 
-    const template = getEmailTemplate(customerName, invoices);
+    const template = getEmailTemplate(customerName, invoices, zeroTo30Invoices);
 
     console.log("RAW EMAIL:", email);
 

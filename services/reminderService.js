@@ -1,27 +1,38 @@
 const invoiceService = require("./invoiceService");
 const emailService = require("./emailService");
 const reminderControlModel = require("../models/reminderControllerModel");
+const calculateAgeing = require("./ageing");
 
 
 // ============================================================
 // AUTOMATIC REMINDERS
 // ============================================================
 
-async function sendAutomaticReminders() {
+async function sendAutomaticReminders({
+    includeZeroTo30 = false
+} = {}) {
 
     try {
 
         console.log("=================================");
         console.log("Automatic Reminder Started");
+        console.log(
+            "Include 0-30:",
+            includeZeroTo30
+        );
         console.log("=================================");
+
 
         const customers =
             await invoiceService.getOutstandingCustomers();
 
+
         for (const customer of customers) {
 
             const companyName =
-                customer.company_name || customer.company;
+                customer.company_name ||
+                customer.company;
+
 
             if (!companyName) {
                 continue;
@@ -73,12 +84,13 @@ async function sendAutomaticReminders() {
 
 
                 // ==================================================
-                // PAUSE EXPIRED -> AUTOMATICALLY RESTART
+                // PAUSE EXPIRED
                 // ==================================================
 
                 await reminderControlModel.clearPause(
                     companyName
                 );
+
 
                 console.log(
                     `▶ Reminder automatically restarted for ${companyName}`
@@ -105,18 +117,126 @@ async function sendAutomaticReminders() {
 
 
             // ==================================================
+            // CALCULATE AGEING
+            // ==================================================
+
+            const invoicesWithAgeing =
+                customerInvoices
+                    .map(inv => {
+
+                        const ageing =
+                            calculateAgeing(
+                                inv.due_date
+                            );
+
+                        return {
+
+                            ...inv,
+
+                            ageingBucket:
+                                ageing.bucket,
+
+                            ageingDays:
+                                ageing.days
+
+                        };
+
+                    })
+                    .filter(inv =>
+                        Number(
+                            inv.outstanding_amount || 0
+                        ) > 0
+                    );
+
+
+            if (invoicesWithAgeing.length === 0) {
+                continue;
+            }
+
+
+            // ==================================================
+            // 0-30 INVOICES
+            // ==================================================
+
+            const zeroTo30Invoices =
+                invoicesWithAgeing.filter(
+                    inv =>
+                        inv.ageingBucket === "0-30"
+                );
+
+
+            // ==================================================
+            // OTHER AGEING INVOICES
+            //
+            // 31-60
+            // 61-90
+            // 90+
+            // ==================================================
+
+            const otherAgeingInvoices =
+                invoicesWithAgeing.filter(
+                    inv =>
+                        inv.ageingBucket !== "0-30"
+                );
+
+
+            // ==================================================
+            // DETERMINE WHAT TO SEND
+            // ==================================================
+
+            let invoicesToSend;
+
+
+            if (includeZeroTo30) {
+
+                // Monday / Wednesday
+                // Send everything
+
+                invoicesToSend =
+                    invoicesWithAgeing;
+
+            }
+            else {
+
+                // Other days
+                // Send only 31-60 / 61-90 / 90+
+
+                invoicesToSend =
+                    otherAgeingInvoices;
+
+            }
+
+
+            // ==================================================
+            // NOTHING TO SEND
+            // ==================================================
+
+            if (
+                !invoicesToSend ||
+                invoicesToSend.length === 0
+            ) {
+
+                console.log(
+                    `No applicable outstanding invoices for ${companyName}`
+                );
+
+                continue;
+            }
+
+
+            // ==================================================
             // GET EMAILS
+            //
+            // Get emails from ALL applicable invoices
             // ==================================================
 
             const emailList = [
                 ...new Set(
-                    customerInvoices
+                    invoicesToSend
                         .map(inv =>
                             (inv.email || "").trim()
                         )
-                        .filter(email =>
-                            email !== ""
-                        )
+                        .filter(Boolean)
                 )
             ];
 
@@ -132,19 +252,45 @@ async function sendAutomaticReminders() {
 
 
             // ==================================================
+            // 0-30 TABLE DATA
+            //
+            // Only send this to template on Monday/Wednesday
+            // ==================================================
+
+            const zeroTo30ForEmail =
+                includeZeroTo30
+                    ? zeroTo30Invoices
+                    : [];
+
+
+            // ==================================================
             // SEND EMAIL
             // ==================================================
 
-            await emailService.sendReminder(
-                companyName,
-                customerInvoices,
-                emailList
-            );
+            const sent =
+                await emailService.sendReminder(
+                    companyName,
+                    invoicesToSend,
+                    emailList,
+                    zeroTo30ForEmail
+                );
 
 
-            console.log(
-                `Reminder sent to ${companyName} -> ${emailList.join(", ")}`
-            );
+            if (sent) {
+
+                console.log(
+                    `✅ Reminder sent to ${companyName} -> ${emailList.join(", ")}`
+                );
+
+            }
+            else {
+
+                console.log(
+                    `❌ Reminder failed for ${companyName}`
+                );
+
+            }
+
         }
 
 
@@ -164,7 +310,6 @@ async function sendAutomaticReminders() {
     }
 
 }
-
 
 
 // ============================================================
@@ -188,7 +333,6 @@ async function stopReminder(
         );
     }
 
-
     await reminderControlModel.setPausedUntil(
         companyName,
         restartDate
@@ -211,11 +355,9 @@ async function restartReminder(
         );
     }
 
-
     await reminderControlModel.clearPause(
         companyName
     );
-
 }
 
 
@@ -225,42 +367,28 @@ async function restartReminder(
 
 async function getStoppedCompanies() {
 
-    const rows =
-        await reminderControlModel.getAllPaused();
-
+    const rows = await reminderControlModel.getAllPaused();
 
     return rows.map(row => ({
-
         id: row.id,
-
         company: row.company_name,
-
         company_name: row.company_name,
-
         restartDate: row.paused_until,
-
         paused_until: row.paused_until,
-
         created_at: row.created_at,
-
         updated_at: row.updated_at
-
     }));
 
 }
+
 
 // ============================================================
 // EXPORT
 // ============================================================
 
 module.exports = {
-
     sendAutomaticReminders,
-
     stopReminder,
-
     restartReminder,
-
     getStoppedCompanies
-
 };

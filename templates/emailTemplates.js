@@ -163,11 +163,80 @@
 
 // module.exports = getEmailTemplate;
 
-function getEmailTemplate(customerName, invoices) {
+function getEmailTemplate(
+    customerName,
+    invoices,
+    zeroTo30Invoices = []
+) {
 
-    const subject = `Payment Reminder – ${customerName}`;
+    const subject =
+        `Payment Reminder – ${customerName}`;
 
-    let total0to30 = 0;
+
+    // ============================================================
+    // 0-30 TABLE
+    // ============================================================
+
+    let zeroTo30Rows = "";
+    let totalZeroTo30 = 0;
+
+
+    zeroTo30Invoices.forEach(inv => {
+
+        const outstanding =
+            Number(inv.outstanding || 0);
+
+        if (outstanding <= 0) {
+            return;
+        }
+
+        totalZeroTo30 += outstanding;
+
+
+        const invoiceDate = inv.invoiceDate
+            ? new Date(inv.invoiceDate)
+                .toLocaleDateString("en-GB")
+            : "";
+
+        const dueDate = inv.dueDate
+            ? new Date(inv.dueDate)
+                .toLocaleDateString("en-GB")
+            : "";
+
+
+        zeroTo30Rows += `
+            <tr>
+
+                <td>
+                    ${inv.invoiceNo}
+                </td>
+
+                <td>
+                    ${inv.customer}
+                </td>
+
+                <td>
+                    ${invoiceDate}
+                </td>
+
+                <td>
+                    ${dueDate}
+                </td>
+
+                <td align="right">
+                    ₹${outstanding.toLocaleString("en-IN")}
+                </td>
+
+            </tr>
+        `;
+
+    });
+
+
+    // ============================================================
+    // OTHER AGEING TABLE
+    // ============================================================
+
     let total31to60 = 0;
     let total61to90 = 0;
     let total90Plus = 0;
@@ -176,156 +245,337 @@ function getEmailTemplate(customerName, invoices) {
 
 
     invoices.forEach(inv => {
-        console.log("--------------------------------");
-        console.log("Invoice :", inv.invoiceNo);
-        console.log("Outstanding :", inv.outstanding);
-        console.log("Outstanding Type :", typeof inv.outstanding);
-        console.log("Bucket :", inv.ageingBucket);
-        console.log("--------------------------------");
 
-        const outstanding = Number(inv.outstanding  || 0);
+        const outstanding =
+            Number(inv.outstanding || 0);
+
 
         if (outstanding <= 0) {
             return;
         }
 
-        let bucket0to30 = "";
+         if (inv.ageingBucket === "0-30") {
+            return;
+        }
+
         let bucket31to60 = "";
         let bucket61to90 = "";
         let bucket90Plus = "";
 
+
         const invoiceDate = inv.invoiceDate
-            ? new Date(inv.invoiceDate).toLocaleDateString("en-GB")
+            ? new Date(inv.invoiceDate)
+                .toLocaleDateString("en-GB")
             : "";
 
         const dueDate = inv.dueDate
-            ? new Date(inv.dueDate).toLocaleDateString("en-GB")
+            ? new Date(inv.dueDate)
+                .toLocaleDateString("en-GB")
             : "";
 
 
-        // switch (inv.ageingBucket) {
-
-        //     case "0-30 Days":
-        //         bucket0to30 = "₹" + outstanding.toLocaleString("en-IN");
-        //         total0to30 += outstanding;
-        //         break;
-
-        //     case "31-60 Days":
-        //         bucket31to60 = "₹" + outstanding.toLocaleString("en-IN");
-        //         total31to60 += outstanding;
-        //         break;
-
-        //     case "61-90 Days":
-        //         bucket61to90 = "₹" + outstanding.toLocaleString("en-IN");
-        //         total61to90 += outstanding;
-        //         break;
-
-        //     case ">90 Days":
-        //         bucket90Plus = "₹" + outstanding.toLocaleString("en-IN");
-        //         total90Plus += outstanding;
-        //         break;
-        // }
-
         switch (inv.ageingBucket) {
 
-            case "0-30":
-                bucket0to30 = "₹" + Number(outstanding).toLocaleString("en-IN");
-                total0to30 += Number(outstanding);
+            case "31-60":
+
+                bucket31to60 =
+                    "₹" +
+                    outstanding.toLocaleString("en-IN");
+
+                total31to60 += outstanding;
+
                 break;
 
-            case "31-60":
-                bucket31to60 = "₹" + Number(outstanding).toLocaleString("en-IN");
-                total31to60 += Number(outstanding);
-                break;
 
             case "61-90":
-                bucket61to90 = "₹" + Number(outstanding).toLocaleString("en-IN");
-                total61to90 += Number(outstanding);
+
+                bucket61to90 =
+                    "₹" +
+                    outstanding.toLocaleString("en-IN");
+
+                total61to90 += outstanding;
+
                 break;
+
 
             case "90+":
-                bucket90Plus = "₹" + Number(outstanding).toLocaleString("en-IN");
-                total90Plus += Number(outstanding);
-                break;
 
-            default:
-                console.log("Unknown Bucket:", inv.ageingBucket);
+                bucket90Plus =
+                    "₹" +
+                    outstanding.toLocaleString("en-IN");
+
+                total90Plus += outstanding;
+
+                break;
         }
 
+
         rows += `
-        <tr>
-            <td>${inv.invoiceNo}</td>
-            <td>${inv.customer}</td>
-            <td>${invoiceDate}</td>
-            <td>${dueDate}</td>
-            <td align="right">${bucket0to30}</td>
-            <td align="right">${bucket31to60}</td>
-            <td align="right">${bucket61to90}</td>
-            <td align="right">${bucket90Plus}</td>
-        </tr>
+            <tr>
+
+                <td>
+                    ${inv.invoiceNo}
+                </td>
+
+                <td>
+                    ${inv.customer}
+                </td>
+
+                <td>
+                    ${invoiceDate}
+                </td>
+
+                <td>
+                    ${dueDate}
+                </td>
+
+                <td align="right">
+                    ${bucket31to60}
+                </td>
+
+                <td align="right">
+                    ${bucket61to90}
+                </td>
+
+                <td align="right">
+                    ${bucket90Plus}
+                </td>
+
+            </tr>
         `;
 
     });
+
+
+    // ============================================================
+    // HTML
+    // ============================================================
 
     return {
 
         subject,
 
         html: `
-        <div style="font-family:Arial,sans-serif;font-size:14px">
 
-            <p><strong>Dear Sir / Madam,</strong></p>
-
-            <p>We hope you are doing well.</p>
+        <div
+            style="
+                font-family:Arial,sans-serif;
+                font-size:14px
+            "
+        >
 
             <p>
-                This is a friendly reminder that the following invoices are currently outstanding.
+                <strong>Dear Sir / Madam,</strong>
             </p>
+
+
+            <p>
+                We hope you are doing well.
+            </p>
+
+
+            <p>
+                This is a friendly reminder that the following
+                invoices are currently outstanding.
+            </p>
+
+
+            <!-- ================================================= -->
+            <!-- 0-30 DAYS TABLE -->
+            <!-- ================================================= -->
+
+            ${
+                zeroTo30Rows
+                ? `
+
+                <h3
+                    style="
+                        margin-top:20px;
+                        margin-bottom:10px;
+                    "
+                >
+                    0-30 Days Outstanding
+                </h3>
+
+
+                <table
+                    border="1"
+                    cellpadding="8"
+                    cellspacing="0"
+                    style="
+                        border-collapse:collapse;
+                        width:100%;
+                        text-align:center;
+                    "
+                >
+
+                    <thead>
+
+                        <tr
+                            style="
+                                background:#198754;
+                                color:#ffffff;
+                            "
+                        >
+
+                            <th>
+                                Invoice No
+                            </th>
+
+                            <th>
+                                User
+                            </th>
+
+                            <th>
+                                Invoice Date
+                            </th>
+
+                            <th>
+                                Due Date
+                            </th>
+
+                            <th>
+                                Outstanding
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        ${zeroTo30Rows}
+
+
+                        <tr
+                            style="
+                                background:#f2f2f2;
+                                font-weight:bold;
+                            "
+                        >
+
+                            <td
+                                colspan="4"
+                                align="right"
+                            >
+                                Total 0-30 Outstanding
+                            </td>
+
+                            <td align="right">
+                                ₹${totalZeroTo30.toLocaleString("en-IN")}
+                            </td>
+
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+                `
+                : ""
+            }
+
+
+            <br>
+
+
+            <!-- ================================================= -->
+            <!-- OTHER AGEING TABLE -->
+            <!-- ================================================= -->
+
+            <h3
+                style="
+                    margin-top:20px;
+                    margin-bottom:10px;
+                "
+            >
+                Other Outstanding Invoices
+            </h3>
+
 
             <table
                 border="1"
                 cellpadding="8"
                 cellspacing="0"
-                style="border-collapse:collapse;width:100%;text-align:center;">
+                style="
+                    border-collapse:collapse;
+                    width:100%;
+                    text-align:center;
+                "
+            >
 
                 <thead>
 
-                    <tr style="background:#0d6efd;color:#ffffff">
+                    <tr
+                        style="
+                            background:#0d6efd;
+                            color:#ffffff;
+                        "
+                    >
 
-                        <th>Invoice No</th>
-                        <th>User</th>
-                        <th>Invoice Date</th>
-                        <th>Due Date</th>
-                        <th>0-30</th>
-                        <th>31-60</th>
-                        <th>61-90</th>
-                        <th>&gt;90</th>
+                        <th>
+                            Invoice No
+                        </th>
+
+                        <th>
+                            User
+                        </th>
+
+                        <th>
+                            Invoice Date
+                        </th>
+
+                        <th>
+                            Due Date
+                        </th>
+
+                        <th>
+                            31-60
+                        </th>
+
+                        <th>
+                            61-90
+                        </th>
+
+                        <th>
+                            &gt;90
+                        </th>
 
                     </tr>
 
                 </thead>
 
+
                 <tbody>
 
                     ${rows}
 
-                    <tr style="background:#f2f2f2;font-weight:bold">
 
-                        <td colspan="4" align="right">
+                    <tr
+                        style="
+                            background:#f2f2f2;
+                            font-weight:bold;
+                        "
+                    >
+
+                        <td
+                            colspan="4"
+                            align="right"
+                        >
                             Total Outstanding
                         </td>
 
-                        <td align="right">
-                            ₹${total0to30.toLocaleString("en-IN")}
-                        </td>
 
                         <td align="right">
                             ₹${total31to60.toLocaleString("en-IN")}
                         </td>
 
+
                         <td align="right">
                             ₹${total61to90.toLocaleString("en-IN")}
                         </td>
+
 
                         <td align="right">
                             ₹${total90Plus.toLocaleString("en-IN")}
@@ -333,19 +583,31 @@ function getEmailTemplate(customerName, invoices) {
 
                     </tr>
 
-                    <tr style="background:#e8f4ff;font-weight:bold">
 
-                        <td colspan="7" align="right">
+                    <tr
+                        style="
+                            background:#e8f4ff;
+                            font-weight:bold;
+                        "
+                    >
+
+                        <td
+                            colspan="6"
+                            align="right"
+                        >
                             Grand Total Outstanding
                         </td>
 
+
                         <td align="right">
+
                             ₹${(
-                                total0to30 +
+                                totalZeroTo30 +
                                 total31to60 +
                                 total61to90 +
                                 total90Plus
                             ).toLocaleString("en-IN")}
+
                         </td>
 
                     </tr>
@@ -354,29 +616,43 @@ function getEmailTemplate(customerName, invoices) {
 
             </table>
 
+
             <br>
 
+
             <p>
-                Kindly arrange payment at your earliest convenience. If payment has already been made, please ignore this email and share the payment reference for our records.
+                Kindly arrange payment at your earliest convenience.
+                If payment has already been made, please ignore this
+                email and share the payment reference for our records.
             </p>
+
 
             <p>
                 For any clarification, please contact our Accounts Team.
             </p>
 
+
             <br>
+
 
             <p>
                 Regards,<br><br>
-                <strong>Accounts Receivable Team</strong><br>
+
+                <strong>
+                    Accounts Receivable Team
+                </strong>
+                <br>
+
                 TYLT Mobility Pvt. Ltd.
             </p>
 
         </div>
+
         `
 
     };
 
 }
+
 
 module.exports = getEmailTemplate;
