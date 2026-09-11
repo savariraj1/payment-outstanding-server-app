@@ -59,7 +59,7 @@ cron.schedule("0 9 * * 1-6", async () => {
 // 31-60 / 61-90 / 90+ continue as normal.
 // ============================================================
 
-cron.schedule("0 9 * * 2,4-6", async () => {
+cron.schedule("15 0 * * 2,4-6", async () => {
 
     console.log("=================================");
     console.log("Running Regular Reminder Scheduler");
