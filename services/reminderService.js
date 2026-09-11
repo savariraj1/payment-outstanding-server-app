@@ -126,7 +126,7 @@ async function sendAutomaticReminders({
 
                         const ageing =
                             calculateAgeing(
-                                inv.due_date
+                                inv.dueDate
                             );
 
                         return {
@@ -144,7 +144,7 @@ async function sendAutomaticReminders({
                     })
                     .filter(inv =>
                         Number(
-                            inv.outstanding_amount || 0
+                            inv.outstanding || 0
                         ) > 0
                     );
 
