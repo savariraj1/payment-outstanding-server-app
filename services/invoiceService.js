@@ -6,8 +6,8 @@ async function getCustomerOutstanding(company) {
     const rows =
         await invoiceModel.findOutstandingByCompany(company);
 
-    console.log("Rows from DB:");
-    console.log(rows);
+    // console.log("Rows from DB:");
+    // console.log(rows);
 
     return rows
         .map(r => {
