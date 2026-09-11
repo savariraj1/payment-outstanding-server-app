@@ -490,7 +490,7 @@ function getEmailTemplate(
                     margin-bottom:10px;
                 "
             >
-                Other Outstanding Invoices
+                Outstanding Invoices List
             </h3>
 
 
