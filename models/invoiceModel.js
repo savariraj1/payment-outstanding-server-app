@@ -205,7 +205,7 @@ async function findOutstandingInvoices(filters = {}) {
     }
 
     sql += `
-        ORDER BY i.import_id DESC, h.created_at DESC, i.due_date ASC
+        ORDER BY i.import_id DESC, i.due_date ASC
     `;
 
     const [rows] = await db.query(sql, values);

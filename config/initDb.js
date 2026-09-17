@@ -61,6 +61,7 @@ async function createInvoicesTable() {
             INDEX idx_invoices_due_date (due_date),
             INDEX idx_invoices_payment_status (payment_status),
             INDEX idx_invoices_import_id (import_id),
+            INDEX idx_invoices_import_due (import_id, due_date),
             CONSTRAINT fk_invoices_import_history
                 FOREIGN KEY (import_id)
                 REFERENCES import_history(id)
@@ -72,6 +73,18 @@ async function createInvoicesTable() {
         await db.query(`
             CREATE INDEX idx_import_history_created_at
             ON import_history (created_at)
+        `);
+    }
+    catch (error) {
+        if (error.code !== "ER_DUP_KEYNAME") {
+            throw error;
+        }
+    }
+
+    try {
+        await db.query(`
+            CREATE INDEX idx_invoices_import_due
+            ON invoices (import_id, due_date)
         `);
     }
     catch (error) {
