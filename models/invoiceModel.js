@@ -57,22 +57,22 @@ function buildInvoiceFilters({
     if (ageingFilters.length) {
         const ageingConditions = ageingFilters.map(bucket => {
             if (bucket === "not-due") {
-                return "(due_date IS NULL OR DATEDIFF(CURDATE(), due_date) < 0)";
+                return "(due_date IS NULL OR due_date > CURDATE())";
             }
 
             if (bucket === "0-30") {
-                return "DATEDIFF(CURDATE(), due_date) BETWEEN 0 AND 30";
+                return "due_date BETWEEN DATE_SUB(CURDATE(), INTERVAL 30 DAY) AND CURDATE()";
             }
 
             if (bucket === "31-60") {
-                return "DATEDIFF(CURDATE(), due_date) BETWEEN 31 AND 60";
+                return "due_date BETWEEN DATE_SUB(CURDATE(), INTERVAL 60 DAY) AND DATE_SUB(CURDATE(), INTERVAL 31 DAY)";
             }
 
             if (bucket === "61-90") {
-                return "DATEDIFF(CURDATE(), due_date) BETWEEN 61 AND 90";
+                return "due_date BETWEEN DATE_SUB(CURDATE(), INTERVAL 90 DAY) AND DATE_SUB(CURDATE(), INTERVAL 61 DAY)";
             }
 
-            return "DATEDIFF(CURDATE(), due_date) > 90";
+            return "due_date < DATE_SUB(CURDATE(), INTERVAL 90 DAY)";
         });
 
         where.push(`(${ageingConditions.join(" OR ")})`);
