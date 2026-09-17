@@ -121,7 +121,9 @@
 
 const express = require("express");
 const cors = require("cors");
+const compression = require("compression");
 const path = require("path");
+const { clearResponseCache } = require("./middleware/responseCache");
 
 const testRoutes = require("./routes/testRoutes");
 const outstandingRoutes = require("./routes/outstandingRoutes");
@@ -141,14 +143,12 @@ const allowedOrigins = [
 
 
 const app = express();
-app.use((req, res, next) => {
-    console.log(">>>>", req.method, req.url);
-    next();
-});
 
 // ======================
 // Middleware
 // ======================
+app.disable("x-powered-by");
+app.use(compression());
 app.use(cors({
     origin(origin, callback) {
         if (!origin || allowedOrigins.includes(origin)) {
@@ -159,11 +159,14 @@ app.use(cors({
     },
     credentials: true
 }));
-app.use(express.json());
+app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));
 
 app.use((req, res, next) => {
-    console.log("Incoming:", req.method, req.url);
+    if (req.method !== "GET") {
+        clearResponseCache();
+    }
+
     next();
 });
 

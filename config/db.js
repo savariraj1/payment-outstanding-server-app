@@ -57,8 +57,13 @@ else {
 const pool = mysql.createPool({
     ...connectionConfig,
     waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
+    connectionLimit: Number(process.env.DB_CONNECTION_LIMIT || 15),
+    maxIdle: Number(process.env.DB_MAX_IDLE || 10),
+    idleTimeout: Number(process.env.DB_IDLE_TIMEOUT || 60000),
+    queueLimit: 0,
+    connectTimeout: Number(process.env.DB_CONNECT_TIMEOUT || 10000),
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 0
 });
 
 console.log(

@@ -61,7 +61,6 @@ async function createInvoicesTable() {
             INDEX idx_invoices_due_date (due_date),
             INDEX idx_invoices_payment_status (payment_status),
             INDEX idx_invoices_import_id (import_id),
-            INDEX idx_invoices_import_due (import_id, due_date),
             CONSTRAINT fk_invoices_import_history
                 FOREIGN KEY (import_id)
                 REFERENCES import_history(id)

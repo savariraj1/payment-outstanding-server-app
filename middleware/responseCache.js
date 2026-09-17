@@ -1,6 +1,10 @@
 const cache = new Map();
 const DEFAULT_TTL_MS = 10 * 1000;
 
+function clearResponseCache() {
+    cache.clear();
+}
+
 function responseCache(ttlMs = DEFAULT_TTL_MS) {
     return (req, res, next) => {
         if (req.method !== "GET") {
@@ -38,3 +42,4 @@ function responseCache(ttlMs = DEFAULT_TTL_MS) {
 }
 
 module.exports = responseCache;
+module.exports.clearResponseCache = clearResponseCache;

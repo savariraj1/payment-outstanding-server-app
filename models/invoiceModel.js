@@ -140,6 +140,8 @@ async function findDashboardInvoices(filters = {}) {
         values
     } = buildInvoiceFilters(filters);
 
+    const needsImportJoin = Boolean(filters.start || filters.end);
+
     let sql = `
         SELECT
             i.import_id,
@@ -147,16 +149,20 @@ async function findDashboardInvoices(filters = {}) {
             i.customer_name,
             i.company_name,
             i.email,
-            i.invoice_date,
             i.due_date,
             i.invoice_amount,
             i.received_amount,
             i.credit_note_amount,
             i.payment_status
         FROM invoices i
-        LEFT JOIN import_history h
-            ON i.import_id = h.id
     `;
+
+    if (needsImportJoin) {
+        sql += `
+            LEFT JOIN import_history h
+                ON i.import_id = h.id
+        `;
+    }
 
     if (where.length) {
         sql += " WHERE " + where.join(" AND ");
