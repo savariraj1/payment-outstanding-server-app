@@ -3,7 +3,7 @@ function calculateAgeing(dueDate) {
     if (!dueDate) {
         return {
             days: 0,
-            bucket: "0-30"
+            bucket: "not-due"
         };
     }
 
@@ -18,7 +18,14 @@ function calculateAgeing(dueDate) {
         (1000 * 60 * 60 * 24)
     );
 
-    const days = Math.max(diffDays, 0);
+    if (diffDays < 0) {
+        return {
+            days: 0,
+            bucket: "not-due"
+        };
+    }
+
+    const days = diffDays;
 
     let bucket;
 

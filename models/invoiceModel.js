@@ -1,5 +1,18 @@
 const db = require("../config/db");
 
+function normalizeFilters(filters) {
+    const filterArray = Array.isArray(filters)
+        ? filters
+        : filters
+        ? [filters]
+        : [];
+
+    return filterArray
+        .flatMap(filter => String(filter).split(","))
+        .map(filter => filter.trim())
+        .filter(Boolean);
+}
+
 function buildInvoiceFilters({
     filters = [],
     start,
@@ -10,27 +23,60 @@ function buildInvoiceFilters({
     const where = [];
     const values = [];
 
-    const filterArray = Array.isArray(filters)
-        ? filters
-        : filters
-        ? [filters]
-        : [];
+    const filterArray = normalizeFilters(filters);
 
-    filterArray.forEach(filter => {
+    const ageingBuckets = new Set([
+        "0-30", "31-60", "61-90", "90+", "not-due"
+    ]);
 
-        where.push(`(
-            invoice_number LIKE ?
-            OR customer_name LIKE ?
-            OR company_name LIKE ?
+    const ageingFilters = filterArray
+        .filter(filter => ageingBuckets.has(String(filter).trim().toLowerCase()))
+        .map(filter => String(filter).trim().toLowerCase());
+
+    const textFilters = filterArray
+        .filter(filter => !ageingBuckets.has(String(filter).trim().toLowerCase()));
+
+    if (textFilters.length) {
+        const textConditions = textFilters.map(() => `(
+            LOWER(invoice_number) LIKE LOWER(?)
+            OR LOWER(customer_name) LIKE LOWER(?)
+            OR LOWER(company_name) LIKE LOWER(?)
             OR payment_status LIKE ?
             OR remarks LIKE ?
         )`);
 
-        for (let i = 0; i < 5; i++) {
-            values.push(`%${filter}%`);
-        }
+        where.push(`(${textConditions.join(" OR ")})`);
 
-    });
+        textFilters.forEach(filter => {
+            for (let i = 0; i < 5; i++) {
+                values.push(`%${filter}%`);
+            }
+        });
+    }
+
+    if (ageingFilters.length) {
+        const ageingConditions = ageingFilters.map(bucket => {
+            if (bucket === "not-due") {
+                return "(due_date IS NULL OR DATEDIFF(CURDATE(), due_date) < 0)";
+            }
+
+            if (bucket === "0-30") {
+                return "DATEDIFF(CURDATE(), due_date) BETWEEN 0 AND 30";
+            }
+
+            if (bucket === "31-60") {
+                return "DATEDIFF(CURDATE(), due_date) BETWEEN 31 AND 60";
+            }
+
+            if (bucket === "61-90") {
+                return "DATEDIFF(CURDATE(), due_date) BETWEEN 61 AND 90";
+            }
+
+            return "DATEDIFF(CURDATE(), due_date) > 90";
+        });
+
+        where.push(`(${ageingConditions.join(" OR ")})`);
+    }
 
     if (start) {
         where.push("DATE(h.created_at) >= ?");
@@ -335,6 +381,7 @@ async function updateCompanyEmail(company, email) {
 }
 
 module.exports = {
+    normalizeFilters,
     buildInvoiceFilters,
     findAll,
     findOutstandingByCompany,

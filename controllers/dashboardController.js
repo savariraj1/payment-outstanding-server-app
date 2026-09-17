@@ -94,13 +94,9 @@ async function getDashboard(req, res) {
             // }
 
             const invoiceAmount = Number(invoice.invoice_amount || 0);
-
             const received = Number(invoice.received_amount || 0);
-
             const credit = Number(invoice.credit_note_amount || 0);
-
-            const outstanding =
-                invoiceAmount - received - credit;
+            const outstanding = invoiceAmount - received - credit;
 
             //-----------------------------------
             // Previous Import
@@ -133,9 +129,7 @@ async function getDashboard(req, res) {
             if(invoice.import_id <= latestImport){
 
                 currentSummary.totalInvoices++;
-
                 currentSummary.totalOutstanding += outstanding;
-
                 currentSummary.paidInvoiceAmount += received;
 
                 if(invoice.payment_status==="Paid")
@@ -144,11 +138,8 @@ async function getDashboard(req, res) {
                     currentSummary.pendingInvoices++;
 
                 if(credit>0){
-
                     currentSummary.creditNoteCount++;
-
                     currentSummary.creditNoteValue += credit;
-
                 }
 
             }
@@ -157,11 +148,8 @@ async function getDashboard(req, res) {
                 return;
 
             if (credit > 0) {
-
                 creditNoteCount++;
-
                 creditNoteValue += credit;
-
             }
 
             totalOutstanding += outstanding;
@@ -177,49 +165,36 @@ async function getDashboard(req, res) {
 
             const ageingInfo = calculateAgeing(invoice.due_date);
 
+            if (ageingInfo.bucket === "not-due")
+                return;
+
             const company = invoice.company_name;
 
             if(!companySummary[company]){
 
                 companySummary[company]={
-
                     company,
-
                     "0-30":0,
-
                     "31-60":0,
-
                     "61-90":0,
-
                     "90+":0,
-
                     total:0,
-
                     invoices:[]
                 };
 
             }
 
             companySummary[company][ageingInfo.bucket]+=outstanding;
-
             companySummary[company].total+=outstanding;
-
             companySummary[company].invoices.push({
-
                 invoiceNo:invoice.invoice_number,
-
                 customer:invoice.customer_name,
-
                 dueDate:invoice.due_date,
-
                 outstanding,
-
                 email:invoice.email
-
             });
 
             ageing[ageingInfo.bucket]++;
-
             outstandingByBucket[ageingInfo.bucket]+=outstanding;
 
         });
@@ -227,55 +202,31 @@ async function getDashboard(req, res) {
         const dashboardRows = Object.values(companySummary);
 
         res.json({
-
             success: true,
-
             data: {
-
                 previousSummary,
-
                 currentSummary,
-
                 totalOutstanding,
-
                 totalInvoices,
-
                 pendingInvoices,
-
                 paidInvoices,
-
                 paidInvoiceAmount,
-
                 creditNoteCount,
-
                 creditNoteValue,
-
                 ageing,
-
                 outstandingByBucket,
-
                 dashboardRows
-
             }
-
         });
-
     }
 
     catch (err) {
-
         console.error(err);
-
         res.status(500).json({
-
             success: false,
-
             message: err.message
-
         });
-
     }
-
 }
 
 module.exports = {

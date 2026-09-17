@@ -143,9 +143,8 @@ async function sendAutomaticReminders({
 
                     })
                     .filter(inv =>
-                        Number(
-                            inv.outstanding || 0
-                        ) > 0
+                        Number(inv.outstanding || 0) > 0 &&
+                        inv.ageingBucket !== "not-due"
                     );
 
 

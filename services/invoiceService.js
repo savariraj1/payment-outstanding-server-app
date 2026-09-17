@@ -50,7 +50,7 @@ async function getCustomerOutstanding(company) {
                 paymentStatus: r.paymentStatus,
 
                 ageingBucket:
-                    r.ageingBucket || ageing.bucket
+                    ageing.bucket
 
             };
 
