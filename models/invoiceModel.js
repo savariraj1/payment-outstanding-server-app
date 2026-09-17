@@ -167,6 +167,52 @@ async function findDashboardInvoices(filters = {}) {
     return rows;
 }
 
+async function findOutstandingInvoices(filters = {}) {
+
+    const {
+        where,
+        values
+    } = buildInvoiceFilters(filters);
+
+    let sql = `
+        SELECT
+            i.id,
+            i.import_id,
+            h.created_at AS import_date,
+            h.file_name,
+            i.invoice_number,
+            i.customer_name,
+            i.company_name,
+            i.invoice_date,
+            i.due_date,
+            i.invoice_amount,
+            i.received_amount,
+            i.received_date,
+            i.credit_note_amount,
+            i.credit_note_number,
+            i.credit_note_date,
+            i.outstanding_amount,
+            i.payment_status,
+            i.remarks,
+            i.email
+        FROM invoices i
+        LEFT JOIN import_history h
+            ON i.import_id = h.id
+    `;
+
+    if (where.length) {
+        sql += " WHERE " + where.join(" AND ");
+    }
+
+    sql += `
+        ORDER BY i.import_id DESC, h.created_at DESC, i.due_date ASC
+    `;
+
+    const [rows] = await db.query(sql, values);
+
+    return rows;
+}
+
 async function findOutstandingByCompany(company) {
 
     const [rows] = await db.query(
@@ -419,6 +465,7 @@ module.exports = {
     buildInvoiceFilters,
     findAll,
     findDashboardInvoices,
+    findOutstandingInvoices,
     findOutstandingByCompany,
     findOutstandingCompanies,
     findByInvoiceNumber,

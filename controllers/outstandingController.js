@@ -9,7 +9,7 @@ exports.getOutstanding = async (req, res) => {
         const start = req.query.start;
         const end = req.query.end;
 
-        const rows = await invoiceModel.findAll({
+        const rows = await invoiceModel.findOutstandingInvoices({
             filters,
             start,
             end
