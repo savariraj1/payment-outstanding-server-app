@@ -67,6 +67,18 @@ async function createInvoicesTable() {
                 ON DELETE SET NULL
         )
     `);
+
+    try {
+        await db.query(`
+            CREATE INDEX idx_import_history_created_at
+            ON import_history (created_at)
+        `);
+    }
+    catch (error) {
+        if (error.code !== "ER_DUP_KEYNAME") {
+            throw error;
+        }
+    }
 }
 
 async function createEmailHistoryTable() {

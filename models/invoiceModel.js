@@ -79,13 +79,13 @@ function buildInvoiceFilters({
     }
 
     if (start) {
-        where.push("DATE(h.created_at) >= ?");
-        values.push(start);
+        where.push("h.created_at >= ?");
+        values.push(`${start} 00:00:00`);
     }
 
     if (end) {
-        where.push("DATE(h.created_at) <= ?");
-        values.push(end);
+        where.push("h.created_at < DATE_ADD(?, INTERVAL 1 DAY)");
+        values.push(`${end} 00:00:00`);
     }
 
     if (company) {
@@ -127,6 +127,40 @@ async function findAll(filters = {}) {
             h.created_at DESC,
             i.due_date ASC
         `;
+
+    const [rows] = await db.query(sql, values);
+
+    return rows;
+}
+
+async function findDashboardInvoices(filters = {}) {
+
+    const {
+        where,
+        values
+    } = buildInvoiceFilters(filters);
+
+    let sql = `
+        SELECT
+            i.import_id,
+            i.invoice_number,
+            i.customer_name,
+            i.company_name,
+            i.email,
+            i.invoice_date,
+            i.due_date,
+            i.invoice_amount,
+            i.received_amount,
+            i.credit_note_amount,
+            i.payment_status
+        FROM invoices i
+        LEFT JOIN import_history h
+            ON i.import_id = h.id
+    `;
+
+    if (where.length) {
+        sql += " WHERE " + where.join(" AND ");
+    }
 
     const [rows] = await db.query(sql, values);
 
@@ -384,6 +418,7 @@ module.exports = {
     normalizeFilters,
     buildInvoiceFilters,
     findAll,
+    findDashboardInvoices,
     findOutstandingByCompany,
     findOutstandingCompanies,
     findByInvoiceNumber,

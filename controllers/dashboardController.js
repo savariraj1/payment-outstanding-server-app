@@ -6,7 +6,14 @@ async function getDashboard(req, res) {
 
     try {
 
-        const imports = await importHistoryModel.findLatest(2);
+        const [imports, invoices] = await Promise.all([
+            importHistoryModel.findLatest(2),
+            invoiceModel.findDashboardInvoices({
+                filters: req.query.filter || [],
+                start: req.query.start,
+                end: req.query.end
+            })
+        ]);
 
         const latestImport =
             imports.length > 0
@@ -17,30 +24,6 @@ async function getDashboard(req, res) {
             imports.length > 1
                 ? imports[1].id
                 : latestImport;
-
-        const filters = req.query.filter || [];
-
-        const start = req.query.start;
-
-        const end = req.query.end;
-
-        const currentDate = start
-            ? new Date(start)
-            : new Date();
-
-        currentDate.setHours(0,0,0,0);
-
-        const previousDate = new Date(currentDate);
-        previousDate.setDate(previousDate.getDate()-1);
-
-        const previousDateString =
-            previousDate.toISOString().split("T")[0];
-
-        const invoices = await invoiceModel.findAll({
-            filters,
-            start,
-            end
-        });
 
         const previousSummary = {
             totalOutstanding:0,
