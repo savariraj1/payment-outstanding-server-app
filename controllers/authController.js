@@ -32,11 +32,11 @@ exports.login = async (req, res) => {
         }
         console.log("================================");
         console.log("DATABASE USER");
-        console.log("ID:", user.id);
-        console.log("Email:", user.email);
-        console.log("Role:", user.role);
-        console.log("Status:", user.status);
-        console.log("Stored Hash:", user.password);
+        // console.log("ID:", user.id);
+        // console.log("Email:", user.email);
+        // console.log("Role:", user.role);
+        // console.log("Status:", user.status);
+        // console.log("Stored Hash:", user.password);
         console.log("================================");
 
         // Compare password
