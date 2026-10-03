@@ -17,7 +17,8 @@ function buildInvoiceFilters({
     filters = [],
     start,
     end,
-    company
+    company,
+    paymentStatus
 } = {}) {
 
     const where = [];
@@ -33,8 +34,15 @@ function buildInvoiceFilters({
         .filter(filter => ageingBuckets.has(String(filter).trim().toLowerCase()))
         .map(filter => String(filter).trim().toLowerCase());
 
+    const paymentFilters = filterArray
+        .filter(filter => ["paid", "unpaid"].includes(String(filter).trim().toLowerCase()))
+        .map(filter => String(filter).trim().toLowerCase());
+
     const textFilters = filterArray
-        .filter(filter => !ageingBuckets.has(String(filter).trim().toLowerCase()));
+        .filter(filter =>
+            !ageingBuckets.has(String(filter).trim().toLowerCase()) &&
+            !["paid", "unpaid"].includes(String(filter).trim().toLowerCase())
+        );
 
     if (textFilters.length) {
         const textConditions = textFilters.map(() => `(
@@ -76,6 +84,23 @@ function buildInvoiceFilters({
         });
 
         where.push(`(${ageingConditions.join(" OR ")})`);
+    }
+
+    const requestedPaymentStatus = String(paymentStatus || "").trim().toLowerCase();
+    if (["paid", "unpaid"].includes(requestedPaymentStatus)) {
+        paymentFilters.push(requestedPaymentStatus);
+    }
+
+    const uniquePaymentFilters = [...new Set(paymentFilters)];
+    if (uniquePaymentFilters.length) {
+        const paymentConditions = uniquePaymentFilters.map(status => {
+            if (status === "paid") {
+                return "payment_status = 'Paid'";
+            }
+
+            return "payment_status IN ('Unpaid', 'Part Paid')";
+        });
+        where.push(`(${paymentConditions.join(" OR ")})`);
     }
 
     if (start) {
@@ -200,7 +225,10 @@ async function findOutstandingInvoices(filters = {}) {
             i.outstanding_amount,
             i.payment_status,
             i.remarks,
-            i.email
+            i.email,
+            i.paid_at,
+            i.created_at,
+            i.updated_at
         FROM invoices i
         LEFT JOIN import_history h
             ON i.import_id = h.id
@@ -319,6 +347,7 @@ async function create(invoice) {
             paid_amount,
             outstanding_amount,
             payment_status,
+            paid_at,
             ageing_days,
             ageing_bucket,
             sync_status,
@@ -342,6 +371,7 @@ async function create(invoice) {
             ?,
             ?,
             ?,
+            CASE WHEN ? = 'Paid' THEN COALESCE(?, NOW()) ELSE NULL END,
             ?,
             ?,
             'Synced',
@@ -365,6 +395,8 @@ async function create(invoice) {
             invoice.paidAmount,
             invoice.outstandingAmount,
             invoice.paymentStatus,
+            invoice.paymentStatus,
+            invoice.receivedDate,
             invoice.ageingDays,
             invoice.ageingBucket,
             invoice.importId
@@ -397,6 +429,10 @@ async function update(id, invoice) {
         `
         UPDATE invoices
         SET
+            paid_at = CASE
+                WHEN ? = 'Paid' THEN COALESCE(paid_at, NOW())
+                ELSE NULL
+            END,
             payment_status = ?,
             received_amount = ?,
             received_date = ?,
@@ -409,6 +445,7 @@ async function update(id, invoice) {
         WHERE id = ?
         `,
         [
+            invoice.paymentStatus,
             invoice.paymentStatus,
             invoice.receivedAmount,
             invoice.receivedDate,

@@ -5,14 +5,16 @@ exports.getOutstanding = async (req, res) => {
 
     try {
 
-       const filters = req.query.filter || [];
+        const filters = req.query.filter || [];
         const start = req.query.start;
         const end = req.query.end;
+        const paymentStatus = req.query.paymentStatus;
 
         const rows = await invoiceModel.findOutstandingInvoices({
             filters,
             start,
-            end
+            end,
+            paymentStatus
         });
 
         const result = rows.map(inv => {
@@ -39,6 +41,9 @@ exports.getOutstanding = async (req, res) => {
                 paymentStatus: inv.payment_status,
                 remarks: inv.remarks,
                 email: inv.email,
+                paidAt: inv.paid_at,
+                createdAt: inv.created_at,
+                updatedAt: inv.updated_at,
                 ageingBucket: ageing.bucket,
                 ageingDays: ageing.days
 

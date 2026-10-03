@@ -151,6 +151,18 @@ async function initDb() {
         "credit_note_number",
         "VARCHAR(100) DEFAULT NULL"
     );
+    await ensureColumn(
+        "invoices",
+        "paid_at",
+        "DATETIME DEFAULT NULL"
+    );
+    await db.query(`
+        UPDATE invoices
+        SET paid_at = received_date
+        WHERE payment_status = 'Paid'
+            AND paid_at IS NULL
+            AND received_date IS NOT NULL
+    `);
     await createEmailHistoryTable();
     await createReminderControlsTable();
     await createGlobalReminderControlTable();
