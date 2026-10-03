@@ -49,6 +49,13 @@ router.post(
 
             }
 
+            if (await reminderService.areAllRemindersStopped()) {
+                return res.status(409).json({
+                    success: false,
+                    message: "Email triggering is stopped for every company."
+                });
+            }
+
             const customerInvoices =
                 await invoiceService.getCustomerOutstanding(customer);
 
@@ -130,12 +137,16 @@ router.get(
 
             const stoppedCompanies =
                 await reminderService.getStoppedCompanies();
+            const globalStopped =
+                await reminderService.areAllRemindersStopped();
 
             res.json({
 
                 success: true,
 
-                data: stoppedCompanies
+                data: stoppedCompanies,
+
+                globalStopped
 
             });
 
@@ -157,6 +168,58 @@ router.get(
 
         }
 
+    }
+);
+
+// ============================================================
+// STOP ALL COMPANY REMINDERS
+// ============================================================
+
+router.post(
+    "/stop-all",
+    authenticateToken,
+    authorizeRoles("Admin", "Manager"),
+    async (req, res) => {
+        try {
+            await reminderService.stopAllReminders();
+            res.json({
+                success: true,
+                message: "Email triggering stopped for every company."
+            });
+        }
+        catch (err) {
+            console.error("STOP ALL COMPANY REMINDERS ERROR:", err);
+            res.status(500).json({
+                success: false,
+                message: err.message
+            });
+        }
+    }
+);
+
+// ============================================================
+// RESTART ALL COMPANY REMINDERS
+// ============================================================
+
+router.post(
+    "/restart-all",
+    authenticateToken,
+    authorizeRoles("Admin", "Manager"),
+    async (req, res) => {
+        try {
+            await reminderService.restartAllReminders();
+            res.json({
+                success: true,
+                message: "Email triggering restarted for every company."
+            });
+        }
+        catch (err) {
+            console.error("RESTART ALL COMPANY REMINDERS ERROR:", err);
+            res.status(500).json({
+                success: false,
+                message: err.message
+            });
+        }
     }
 );
 

@@ -125,6 +125,22 @@ async function createReminderControlsTable() {
 
 }
 
+async function createGlobalReminderControlTable() {
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS global_reminder_control (
+            id TINYINT NOT NULL PRIMARY KEY,
+            is_stopped TINYINT(1) NOT NULL DEFAULT 0,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                ON UPDATE CURRENT_TIMESTAMP
+        )
+    `);
+
+    await db.query(`
+        INSERT IGNORE INTO global_reminder_control (id, is_stopped)
+        VALUES (1, 0)
+    `);
+}
+
 async function initDb() {
     await createUsersTable();
     await createImportHistoryTable();
@@ -137,6 +153,7 @@ async function initDb() {
     );
     await createEmailHistoryTable();
     await createReminderControlsTable();
+    await createGlobalReminderControlTable();
     await seedDefaultUser();
 
     console.log("[DB] Tables ensured");

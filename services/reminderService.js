@@ -22,6 +22,10 @@ async function sendAutomaticReminders({
         );
         console.log("=================================");
 
+        if (await reminderControlModel.getGlobalStopped()) {
+            console.log("Automatic reminders are stopped for every company.");
+            return;
+        }
 
         const customers =
             await invoiceService.getOutstandingCustomers();
@@ -380,6 +384,18 @@ async function getStoppedCompanies() {
 
 }
 
+async function areAllRemindersStopped() {
+    return reminderControlModel.getGlobalStopped();
+}
+
+async function stopAllReminders() {
+    await reminderControlModel.setGlobalStopped(true);
+}
+
+async function restartAllReminders() {
+    await reminderControlModel.setGlobalStopped(false);
+}
+
 
 // ============================================================
 // EXPORT
@@ -389,5 +405,8 @@ module.exports = {
     sendAutomaticReminders,
     stopReminder,
     restartReminder,
-    getStoppedCompanies
+    getStoppedCompanies,
+    areAllRemindersStopped,
+    stopAllReminders,
+    restartAllReminders
 };

@@ -1,4 +1,5 @@
 const XLSX = require("xlsx");
+const ExcelJS = require("exceljs");
 const fs = require("fs");
 const excelService = require("../services/excelImportService");
 const importHistoryModel = require("../models/importHistoryModel");
@@ -234,4 +235,46 @@ exports.importExcel = async (req, res) => {
 
     }
 
+};
+
+exports.downloadImportTemplate = async (req, res) => {
+    try {
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet("Invoice Import Format");
+
+        worksheet.addRow([
+            "Customer Name",
+            "Company Name",
+            "Email",
+            "Invoice Number",
+            "Invoice Date",
+            "Due Date",
+            "Invoice Amount",
+            "Amount Received",
+            "Received Date",
+            "Credit Note Amount",
+            "Credit Note Number",
+            "Credit Note Date",
+            "Remarks"
+        ]);
+
+        res.setHeader(
+            "Content-Type",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
+        res.setHeader(
+            "Content-Disposition",
+            "attachment; filename=Invoice_Import_Format.xlsx"
+        );
+
+        await workbook.xlsx.write(res);
+        res.end();
+    }
+    catch (error) {
+        console.error("DOWNLOAD IMPORT TEMPLATE ERROR:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to generate the invoice import format."
+        });
+    }
 };

@@ -110,6 +110,43 @@ async function getAllPaused() {
     return rows;
 }
 
+async function getGlobalStopped() {
+    const [rows] = await db.query(`
+        SELECT is_stopped
+        FROM global_reminder_control
+        WHERE id = 1
+        LIMIT 1
+    `);
+
+    if (!rows.length) {
+        throw new Error("Global reminder control has not been initialized.");
+    }
+
+    return Number(rows[0].is_stopped) === 1;
+}
+
+async function setGlobalStopped(isStopped) {
+    const [rows] = await db.query(`
+        SELECT id
+        FROM global_reminder_control
+        WHERE id = 1
+        LIMIT 1
+    `);
+
+    if (!rows.length) {
+        throw new Error("Global reminder control has not been initialized.");
+    }
+
+    await db.query(
+        `
+        UPDATE global_reminder_control
+        SET is_stopped = ?
+        WHERE id = 1
+        `,
+        [isStopped ? 1 : 0]
+    );
+}
+
 
 module.exports = {
 
@@ -119,6 +156,10 @@ module.exports = {
 
     clearPause,
 
-    getAllPaused
+    getAllPaused,
+
+    getGlobalStopped,
+
+    setGlobalStopped
 
 };

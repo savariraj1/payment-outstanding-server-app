@@ -10,6 +10,11 @@ const upload = multer({
 
 const router = express.Router();
 
+router.get(
+    "/template",
+    controller.downloadImportTemplate
+);
+
 router.post(
     "/",
     upload.single("file"),
